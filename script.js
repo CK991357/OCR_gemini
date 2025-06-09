@@ -257,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     "请提取图片中的所有文字内容，包括标点符号和特殊字符。直接返回文本内容，不需要任何解释或描述。" : 
                     `请作为高度智能化的图像处理系统，分析用户上传的图片。
 你的任务是自动提取图片中的关键要素，并根据Comfy UI文生图的要求进行分类和整理。
-最终输出完整的要素列表，并生成一份Comfy UI的提示词模板。
+最终输出完整的要素列表，并生成一份Comfy UI的提示词模板，包括英文和中文两个版本。
 
 请严格按照以下结构和内容要求输出：
 
@@ -284,9 +284,13 @@ document.addEventListener('DOMContentLoaded', function() {
 7. 纹理与材质：
    - 提取图片中的纹理信息，如粗糙、光滑、细腻、金属、玻璃、布料、木质等。
 
-【Comfy UI 提示词模板】
+【Comfy UI 提示词模板 - 英文版】
 
-根据上述提取和分类的要素，生成一个英文的Comfy UI提示词模板。这个提示词应该是一个连贯的描述，包含所有关键细节，可以直接用于文生图。`;
+根据上述提取和分类的要素，生成一个英文的Comfy UI提示词模板。这个提示词应该是一个连贯的描述，包含所有关键细节，可以直接用于文生图。
+
+【Comfy UI 提示词模板 - 中文版】
+
+根据上述提取和分类的要素，生成一个中文的Comfy UI提示词模板。这个提示词应该是一个连贯的描述，包含所有关键细节，可以直接用于文生图。`;
                 
                 loadingText.textContent = currentMode === 'ocr' ? '正在识别图片文字...' : '正在分析图片内容...';
                 const result = await callGeminiAPI(base64Data, apiKey, promptText);
