@@ -2,6 +2,8 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
 document.addEventListener('DOMContentLoaded', function() {
+    // OCR功能相关元素
+    const ocrPanel = document.getElementById('ocrPanel'); // OCR面板
     const dropArea = document.getElementById('dropArea');
     const fileInput = document.getElementById('fileInput');
     const fileInfo = document.getElementById('fileInfo');
@@ -19,48 +21,127 @@ document.addEventListener('DOMContentLoaded', function() {
     const ocrMode = document.getElementById('ocrMode');
     const descMode = document.getElementById('descMode');
     
+    // 图像生成功能相关元素
+    const imageGenerationPanel = document.getElementById('imageGenerationPanel'); // 图像生成面板
+    const ocrFunctionBtn = document.getElementById('ocrFunction'); // OCR功能切换按钮
+    const imageGenerationFunctionBtn = document.getElementById('imageGenerationFunction'); // 图像生成功能切换按钮
+    const imageGenPromptInput = document.getElementById('imageGenPrompt');
+    const imageGenNegativePromptInput = document.getElementById('imageGenNegativePrompt');
+    const imageGenImageSizeSelect = document.getElementById('imageGenImageSize');
+    const imageGenBatchSizeInput = document.getElementById('imageGenBatchSize');
+    const imageGenBatchSizeValueSpan = document.getElementById('imageGenBatchSizeValue');
+    const imageGenNumInferenceStepsInput = document.getElementById('imageGenNumInferenceSteps');
+    const imageGenNumInferenceStepsValueSpan = document.getElementById('imageGenNumInferenceStepsValue');
+    const imageGenGuidanceScaleInput = document.getElementById('imageGenGuidanceScale');
+    const imageGenGuidanceScaleValueSpan = document.getElementById('imageGenGuidanceScaleValue');
+    const imageGenSeedInput = document.getElementById('imageGenSeed');
+    const generateImageBtn = document.getElementById('generateImageBtn');
+    const imageGenerationLoading = document.getElementById('imageGenerationLoading');
+    const imageGenerationLoadingText = document.getElementById('imageGenerationLoadingText');
+    const imageGenerationError = document.getElementById('imageGenerationError');
+    const imageResultsDiv = document.getElementById('imageResults');
+    const expandPromptButton = document.getElementById('expandPromptButton');
+    const siliconflowApiKeyInput = document.getElementById('siliconflowApiKey'); // 新增 Siliconflow API 密钥输入框的引用
+
+    // 新增图生图相关元素
+    const imageGenDropArea = document.getElementById('imageGenDropArea');
+    const imageGenFileInput = document.getElementById('imageGenFileInput');
+    const imageGenFileInfo = document.getElementById('imageGenFileInfo');
+    const imageGenImagePreview = document.getElementById('imageGenImagePreview');
+    const imageGenClearImageBtn = document.getElementById('imageGenClearImageBtn');
+
     let selectedFile = null;
     let pdfDoc = null;
     let pageImages = []; // 用于存储PDF每页的Base64图片数据
-    let currentMode = 'ocr'; // 默认模式为OCR
-    
-    // 初始化按钮文本
-    updateButtonText();
+    let currentFunction = 'ocr'; // 默认功能为OCR
+    let imageGenSourceImageBase64 = null; // 用于存储图生图的Base64图片数据
 
-    // 设置模式
+    // 初始化功能面板显示
+    ocrPanel.style.display = 'grid';
+    imageGenerationPanel.style.display = 'none';
+    updateOcrButtonState(); // 更新OCR分析按钮状态
+    updateImageGenButtonState(); // 更新图像生成按钮状态
+
+    // 功能切换事件监听
+    ocrFunctionBtn.addEventListener('click', () => {
+        ocrFunctionBtn.classList.add('active');
+        imageGenerationFunctionBtn.classList.remove('active');
+        ocrPanel.style.display = 'grid';
+        imageGenerationPanel.style.display = 'none';
+        currentFunction = 'ocr';
+        updateOcrButtonState(); // 切换到OCR时更新OCR分析按钮状态
+        updateImageGenButtonState(); // 确保图像生成按钮在切换时也更新状态
+    });
+
+    imageGenerationFunctionBtn.addEventListener('click', () => {
+        imageGenerationFunctionBtn.classList.add('active');
+        ocrFunctionBtn.classList.remove('active');
+        ocrPanel.style.display = 'none';
+        imageGenerationPanel.style.display = 'block';
+        currentFunction = 'imageGen';
+        updateOcrButtonState(); // 确保OCR分析按钮在切换时也更新状态
+        updateImageGenButtonState(); // 切换到图像生成时更新按钮状态
+    });
+
+    // OCR模式切换 (保留原有逻辑)
+    let currentMode = 'ocr'; // 默认模式为OCR
     ocrMode.addEventListener('click', () => {
         ocrMode.classList.add('active');
         descMode.classList.remove('active');
         currentMode = 'ocr';
-        updateButtonText();
+        updateAnalyzeButtonText();
     });
     
     descMode.addEventListener('click', () => {
         descMode.classList.add('active');
         ocrMode.classList.remove('active');
         currentMode = 'description';
-        updateButtonText();
+        updateAnalyzeButtonText();
     });
     
     /**
-     * @function updateButtonText
-     * @description 根据当前模式更新分析按钮的文本和图标。
+     * @function updateAnalyzeButtonText
+     * @description 根据当前OCR模式更新分析按钮的文本和图标。
      * @returns {void}
      */
-    function updateButtonText() {
+    function updateAnalyzeButtonText() {
         analyzeBtn.innerHTML = currentMode === 'ocr' ? 
             '<i class="fas fa-search"></i> 提取文本内容' : 
             '<i class="fas fa-image"></i> 分析图片内容';
     }
+
+    /**
+     * @function updateOcrButtonState
+     * @description 根据当前功能模式和Gemini API Key状态更新OCR分析按钮的禁用状态。
+     * @returns {void}
+     */
+    function updateOcrButtonState() {
+        analyzeBtn.disabled = !(apiKeyInput.value.trim() !== '' && selectedFile && currentFunction === 'ocr');
+    }
+
+    /**
+     * @function updateImageGenButtonState
+     * @description 根据当前功能模式、Siliconflow API Key和提示词状态更新图像生成按钮的禁用状态。
+     * @returns {void}
+     */
+    function updateImageGenButtonState() {
+        generateImageBtn.disabled = !(siliconflowApiKeyInput.value.trim() !== '' && imageGenPromptInput.value.trim() !== '' && currentFunction === 'imageGen');
+    }
     
-    // 点击上传区域触发文件选择
+    // OCR文件上传区域事件监听
     dropArea.addEventListener('click', () => {
         fileInput.click();
     });
     
-    // 处理拖放事件
+    // 图像生成文件上传区域事件监听
+    imageGenDropArea.addEventListener('click', () => {
+        imageGenFileInput.click();
+    });
+
+    // 处理拖放事件的通用函数
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
+        imageGenDropArea.addEventListener(eventName, preventDefaults, false);
     });
     
     /**
@@ -74,17 +155,20 @@ document.addEventListener('DOMContentLoaded', function() {
         e.stopPropagation();
     }
     
+    // 高亮和恢复上传区域样式的通用函数
     ['dragenter', 'dragover'].forEach(eventName => {
         dropArea.addEventListener(eventName, highlight, false);
+        imageGenDropArea.addEventListener(eventName, highlightImageGen, false);
     });
     
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, unhighlight, false);
+        imageGenDropArea.addEventListener(eventName, unhighlightImageGen, false);
     });
     
     /**
      * @function highlight
-     * @description 高亮上传区域的样式。
+     * @description 高亮OCR上传区域的样式。
      * @returns {void}
      */
     function highlight() {
@@ -94,33 +178,72 @@ document.addEventListener('DOMContentLoaded', function() {
     
     /**
      * @function unhighlight
-     * @description 恢复上传区域的默认样式。
+     * @description 恢复OCR上传区域的默认样式。
      * @returns {void}
      */
     function unhighlight() {
         dropArea.style.backgroundColor = 'rgba(66, 133, 244, 0.05)';
         dropArea.style.borderColor = '#4285f4';
     }
+
+    /**
+     * @function highlightImageGen
+     * @description 高亮图像生成上传区域的样式。
+     * @returns {void}
+     */
+    function highlightImageGen() {
+        imageGenDropArea.style.backgroundColor = 'rgba(66, 133, 244, 0.15)';
+        imageGenDropArea.style.borderColor = '#1a73e8';
+    }
+    
+    /**
+     * @function unhighlightImageGen
+     * @description 恢复图像生成上传区域的默认样式。
+     * @returns {void}
+     */
+    function unhighlightImageGen() {
+        imageGenDropArea.style.backgroundColor = 'rgba(66, 133, 244, 0.05)';
+        imageGenDropArea.style.borderColor = '#4285f4';
+    }
     
     // 处理文件拖放
     dropArea.addEventListener('drop', handleDrop, false);
+    imageGenDropArea.addEventListener('drop', handleImageGenDrop, false);
     
     /**
      * @function handleDrop
-     * @description 处理文件拖放事件。
+     * @description 处理OCR文件拖放事件。
      * @param {DragEvent} e - 拖放事件对象。
      * @returns {void}
      */
     function handleDrop(e) {
         const dt = e.dataTransfer;
         const file = dt.files[0];
-        handleFile(file);
+        handleFile(file, 'ocr');
+    }
+
+    /**
+     * @function handleImageGenDrop
+     * @description 处理图像生成文件拖放事件。
+     * @param {DragEvent} e - 拖放事件对象。
+     * @returns {void}
+     */
+    function handleImageGenDrop(e) {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        handleFile(file, 'imageGen');
     }
     
     // 处理文件选择
     fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
-            handleFile(this.files[0]);
+            handleFile(this.files[0], 'ocr');
+        }
+    });
+
+    imageGenFileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            handleFile(this.files[0], 'imageGen');
         }
     });
     
@@ -128,100 +251,123 @@ document.addEventListener('DOMContentLoaded', function() {
      * @function handleFile
      * @description 处理文件选择或拖放，进行文件类型检查和文件信息/图片/PDF预览显示。
      * @param {File} file - 用户选择或拖放的文件对象。
+     * @param {string} type - 文件处理类型 ('ocr' 或 'imageGen')。
      * @returns {Promise<void>}
      */
-    async function handleFile(file) {
+    async function handleFile(file, type) {
         const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
         const validPDFType = 'application/pdf';
         
-        if (!validImageTypes.includes(file.type) && file.type !== validPDFType) {
-            alert('请上传图片文件（JPG, PNG, WEBP）或PDF文件');
-            return;
-        }
-        
-        selectedFile = file;
-        fileInfo.textContent = `${file.name} (${formatFileSize(file.size)})`;
-        
-        // 清除所有预览
-        imagePreview.style.display = 'none';
-        pdfPreview.innerHTML = '';
-        pageImages = [];
-        
-        // 显示加载状态
-        loading.style.display = 'block';
-        loadingText.textContent = '正在加载文件...';
-        
-        try {
-            if (validImageTypes.includes(file.type)) {
-                // 图片预览
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    imagePreview.style.display = 'block';
+        if (type === 'ocr') {
+            if (!validImageTypes.includes(file.type) && file.type !== validPDFType) {
+                alert('OCR功能请上传图片文件（JPG, PNG, WEBP）或PDF文件');
+                return;
+            }
+            selectedFile = file;
+            fileInfo.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            imagePreview.style.display = 'none';
+            pdfPreview.innerHTML = '';
+            pageImages = [];
+
+            loading.style.display = 'block';
+            loadingText.textContent = '正在加载文件...';
+
+            try {
+                if (validImageTypes.includes(file.type)) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                    loading.style.display = 'none';
+                } else if (file.type === validPDFType) {
+                    loadingText.textContent = '正在加载PDF文档...';
+                    const arrayBuffer = await file.arrayBuffer();
+                    pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    
+                    for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                        const page = await pdfDoc.getPage(pageNum);
+                        const viewport = page.getViewport({ scale: 0.5 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        await page.render(renderContext).promise;
+                        
+                        const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        pageImages.push(imageUrl);
+                        
+                        const pageContainer = document.createElement('div');
+                        pageContainer.className = 'pdf-preview-page';
+                        const img = document.createElement('img');
+                        img.src = imageUrl;
+                        img.alt = `Page ${pageNum}`;
+                        img.style.maxWidth = '100px';
+                        img.style.height = 'auto';
+                        const pageNumber = document.createElement('div');
+                        pageNumber.className = 'page-number';
+                        pageNumber.textContent = `Page ${pageNum}`;
+                        
+                        pageContainer.appendChild(img);
+                        pageContainer.appendChild(pageNumber);
+                        pdfPreview.appendChild(pageContainer);
+                    }
+                    loading.style.display = 'none';
                 }
-                reader.readAsDataURL(file);
-                loading.style.display = 'none'; // 图片加载快，直接隐藏
-            } else if (file.type === validPDFType) {
-                // PDF预览
-                loadingText.textContent = '正在加载PDF文档...';
-                const arrayBuffer = await file.arrayBuffer();
-                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                
-                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                    const page = await pdfDoc.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 0.5 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-                    
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: viewport
-                    };
-                    await page.render(renderContext).promise;
-                    
-                    const imageUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    pageImages.push(imageUrl);
-                    
-                    const pageContainer = document.createElement('div');
-                    pageContainer.className = 'pdf-preview-page';
-                    const img = document.createElement('img');
-                    img.src = imageUrl;
-                    img.alt = `Page ${pageNum}`;
-                    img.style.maxWidth = '100px';
-                    img.style.height = 'auto';
-                    const pageNumber = document.createElement('div');
-                    pageNumber.className = 'page-number';
-                    pageNumber.textContent = `Page ${pageNum}`;
-                    
-                    pageContainer.appendChild(img);
-                    pageContainer.appendChild(pageNumber);
-                    pdfPreview.appendChild(pageContainer);
-                }
+            } catch (error) {
+                console.error('OCR文件处理错误:', error);
+                resultContent.textContent = `错误: ${error.message}`;
                 loading.style.display = 'none';
             }
-            
-            // 如果API密钥已输入，启用分析按钮
-            if (apiKeyInput.value.trim() !== '') {
-                analyzeBtn.disabled = false;
+        } else if (type === 'imageGen') {
+            if (!validImageTypes.includes(file.type)) {
+                alert('图像生成功能请上传图片文件（JPG, PNG, WEBP）');
+                return;
             }
-            
-        } catch (error) {
-            console.error('文件处理错误:', error);
-            resultContent.textContent = `错误: ${error.message}`;
-            loading.style.display = 'none';
+            imageGenFileInfo.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            imageGenImagePreview.style.display = 'none';
+            imageGenClearImageBtn.style.display = 'none';
+
+            try {
+                imageGenSourceImageBase64 = await fileToBase64(file);
+                imageGenImagePreview.src = imageGenSourceImageBase64;
+                imageGenImagePreview.style.display = 'block';
+                imageGenClearImageBtn.style.display = 'block';
+            } catch (error) {
+                console.error('图像生成文件处理错误:', error);
+                showError(imageGenerationError, `文件加载失败: ${error.message}`);
+            }
         }
+        updateOcrButtonState();
+        updateImageGenButtonState();
     }
     
+    // 清除图像生成图片
+    imageGenClearImageBtn.addEventListener('click', () => {
+        imageGenImagePreview.src = '';
+        imageGenImagePreview.style.display = 'none';
+        imageGenClearImageBtn.style.display = 'none';
+        imageGenFileInput.value = ''; // 清除文件输入
+        imageGenSourceImageBase64 = null;
+        imageGenFileInfo.textContent = '未选择图片';
+        updateImageGenButtonState();
+    });
+
     // 监听API密钥输入
     apiKeyInput.addEventListener('input', function() {
-        if (this.value.trim() !== '' && selectedFile) {
-            analyzeBtn.disabled = false;
-        } else {
-            analyzeBtn.disabled = true;
-        }
+        updateOcrButtonState(); // Gemini API Key输入变化只更新OCR分析按钮状态
     });
+
+    // 为新的 Siliconflow API 密钥输入框添加事件监听
+    siliconflowApiKeyInput.addEventListener('input', updateImageGenButtonState);
+    // 为图像生成提示词输入框添加事件监听
+    imageGenPromptInput.addEventListener('input', updateImageGenButtonState);
     
     // 分析按钮点击事件
     analyzeBtn.addEventListener('click', async function() {
@@ -232,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const apiKey = apiKeyInput.value.trim();
         if (!apiKey) {
-            alert('请输入Gemini API密钥');
+            alert('请输入API密钥');
             return;
         }
         
@@ -438,5 +584,238 @@ document.addEventListener('DOMContentLoaded', function() {
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // 图像生成参数事件
+    imageGenBatchSizeInput.addEventListener('input', () => {
+        imageGenBatchSizeValueSpan.textContent = imageGenBatchSizeInput.value;
+    });
+
+    imageGenNumInferenceStepsInput.addEventListener('input', () => {
+        imageGenNumInferenceStepsValueSpan.textContent = imageGenNumInferenceStepsInput.value;
+    });
+
+    imageGenGuidanceScaleInput.addEventListener('input', () => {
+        imageGenGuidanceScaleValueSpan.textContent = imageGenGuidanceScaleInput.value;
+    });
+
+    // 图像生成按钮事件
+    generateImageBtn.addEventListener('click', generateImages);
+
+    // 扩写按钮事件
+    expandPromptButton.addEventListener('click', async () => {
+        const currentPrompt = imageGenPromptInput.value.trim();
+        if (!currentPrompt) {
+            showError(imageGenerationError, '提示词不能为空');
+            return;
+        }
+        
+        imageGenerationLoading.style.display = 'block';
+        imageGenerationLoadingText.textContent = '正在扩写提示词...';
+        imageGenerationError.style.display = 'none';
+        expandPromptButton.disabled = true;
+        
+        try {
+            const expandedText = await expandPrompt(currentPrompt);
+            imageGenPromptInput.value = expandedText;
+            showSuccess('提示词扩写成功');
+        } catch (error) {
+            showError(imageGenerationError, `提示词扩写失败: ${error.message}`);
+        } finally {
+            imageGenerationLoading.style.display = 'none';
+            expandPromptButton.disabled = false;
+        }
+    });
+
+    /**
+     * @function expandPrompt
+     * @description 调用Gemini API扩写提示词。
+     * @param {string} inputText - 原始提示词。
+     * @returns {Promise<string>} - 返回一个Promise，解析为扩写后的提示词。
+     * @throws {Error} - 如果API请求失败或未获取到有效结果。
+     */
+    async function expandPrompt(inputText) {
+        const systemPrompt = `作为AI文生图提示词架构师，对原始提示词进行详细扩写，使其更具描述性、细节丰富，并包含艺术风格、光照、构图等元素，以生成高质量图像。直接返回扩写后的提示词，不需要任何解释或描述。`;
+        
+        const requestData = {
+            model: "gemini-2.0-flash",
+            messages: [
+                {
+                    role: "system",
+                    content: [{ type: "text", text: systemPrompt }]
+                },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: `请根据以下原始提示词进行扩写。原始提示词：${inputText}`
+                        }
+                    ]
+                }
+            ]
+        };
+        
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) throw new Error('API密钥未提供');
+        
+        const response = await fetch(`https://geminiapim.10110531.xyz/chat/completions?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API请求失败: ${response.status} ${errorText}`);
+        }
+        
+        const data = await response.json();
+        if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+            return data.choices[0].message.content;
+        } else {
+            throw new Error('未获取到有效的扩写结果');
+        }
+    }
+
+    /**
+     * @function generateImages
+     * @description 调用Siliconflow API生成图像。
+     * @returns {Promise<void>}
+     * @throws {Error} - 如果API请求失败。
+     */
+    async function generateImages() {
+        const apiKey = siliconflowApiKeyInput.value.trim(); // 从Siliconflow API密钥输入框获取密钥
+        if (!apiKey) {
+            showError(imageGenerationError, '请输入Siliconflow API密钥');
+            return;
+        }
+        
+        const prompt = imageGenPromptInput.value.trim();
+        if (!prompt) {
+            showError(imageGenerationError, '提示词不能为空');
+            return;
+        }
+        
+        // 准备参数
+        const params = {
+            model: "Kwai-Kolors/Kolors", // 根据文档，模型固定
+            prompt: prompt,
+            negative_prompt: imageGenNegativePromptInput.value.trim() || undefined,
+            image_size: imageGenImageSizeSelect.value,
+            batch_size: parseInt(imageGenBatchSizeInput.value),
+            num_inference_steps: parseInt(imageGenNumInferenceStepsInput.value),
+            guidance_scale: parseFloat(imageGenGuidanceScaleInput.value),
+            seed: imageGenSeedInput.value ? parseInt(imageGenSeedInput.value) : undefined,
+            image: imageGenSourceImageBase64 || undefined // 添加图生图的图片数据
+        };
+        
+        // 显示加载
+        imageGenerationLoading.style.display = 'block';
+        imageGenerationLoadingText.textContent = '正在生成图像...';
+        imageGenerationError.style.display = 'none';
+        imageResultsDiv.innerHTML = ''; // 清空之前的图片
+        
+        try {
+            // 调用Silicon Flow API
+            const response = await fetch('https://api.siliconflow.cn/v1/images/generations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(params)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `图像生成失败: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            // 显示结果
+            displayImageResults(data.data);
+        } catch (error) {
+            showError(imageGenerationError, error.message);
+        } finally {
+            imageGenerationLoading.style.display = 'none';
+        }
+    }
+
+    /**
+     * @function displayImageResults
+     * @description 在页面上显示生成的图像。
+     * @param {Array<Object>} images - 包含图像URL的对象数组。
+     * @param {string} images[].url - 图像的URL。
+     * @returns {void}
+     */
+    function displayImageResults(images) {
+        imageResultsDiv.innerHTML = '';
+        
+        if (images && images.length > 0) {
+            images.forEach(img => {
+                const imageCard = document.createElement('div');
+                imageCard.className = 'image-card';
+                
+                const imgElement = document.createElement('img');
+                imgElement.src = img.url;
+                imgElement.alt = 'Generated Image';
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'actions';
+                
+                const copyButton = document.createElement('button');
+                copyButton.innerHTML = '<i class="fas fa-copy"></i> 复制链接';
+                copyButton.onclick = () => {
+                    navigator.clipboard.writeText(img.url).then(() => {
+                        showSuccess('链接已复制！');
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                        showError(imageGenerationError, '复制失败，请手动复制链接');
+                    });
+                };
+                
+                const downloadButton = document.createElement('button');
+                downloadButton.innerHTML = '<i class="fas fa-download"></i> 下载图片';
+                downloadButton.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = img.url;
+                    a.download = `generated_image_${Date.now()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+                
+                actionsDiv.appendChild(copyButton);
+                actionsDiv.appendChild(downloadButton);
+                imageCard.appendChild(imgElement);
+                imageCard.appendChild(actionsDiv);
+                imageResultsDiv.appendChild(imageCard);
+            });
+        } else {
+            showError(imageGenerationError, '未生成任何图片');
+        }
+    }
+
+    /**
+     * @function showError
+     * @description 显示错误消息。
+     * @param {HTMLElement} element - 显示错误消息的DOM元素。
+     * @param {string} message - 要显示的错误消息文本。
+     * @returns {void}
+     */
+    function showError(element, message) {
+        element.textContent = message;
+        element.style.display = 'block';
+    }
+
+    /**
+     * @function showSuccess
+     * @description 显示成功消息（使用alert）。
+     * @param {string} message - 要显示的成功消息文本。
+     * @returns {void}
+     */
+    function showSuccess(message) {
+        alert(message);
     }
 });

@@ -376,6 +376,212 @@ footer {
     border-top: 1px solid #eee;
 }
 
+/* 添加在原有CSS中 */
+
+/* 功能选择器 */
+.function-selector {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.function-btn {
+    padding: 15px 30px;
+    border: 2px solid var(--primary); /* 使用OCR项目的主色 */
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--dark); /* 默认文字颜色 */
+    background-color: var(--light); /* 默认背景色 */
+}
+
+.function-btn.active {
+    background: linear-gradient(to right, var(--primary), var(--secondary)); /* 使用OCR项目渐变色 */
+    color: white;
+    box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+}
+
+.function-btn i {
+    font-size: 1.2rem;
+}
+
+/* 图像生成表单 */
+.form-section {
+    margin-bottom: 20px;
+}
+
+.prompt-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.prompt-wrapper textarea {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd; /* 与OCR项目输入框保持一致 */
+    border-radius: 8px; /* 与OCR项目输入框保持一致 */
+    font-size: 1rem;
+    transition: border-color 0.3s; /* 与OCR项目输入框保持一致 */
+}
+
+.prompt-wrapper textarea:focus {
+    border-color: var(--primary); /* 与OCR项目输入框保持一致 */
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2); /* 与OCR项目输入框保持一致 */
+}
+
+.expand-button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 12px;
+    background: var(--primary); /* 使用OCR项目主色 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.expand-button:hover {
+    background-color: #1a73e8; /* 与OCR项目按钮hover色保持一致 */
+}
+
+.param-group {
+    margin-bottom: 15px;
+    display: flex; /* 使label和input在同一行 */
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.param-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    flex: 0 0 120px; /* 固定label宽度 */
+    margin-right: 10px;
+}
+
+.param-group select,
+.param-group input[type="number"] {
+    width: calc(100% - 130px); /* 减去label和margin的宽度 */
+    padding: 14px; /* 与OCR项目输入框保持一致 */
+    border: 2px solid #ddd; /* 与OCR项目输入框保持一致 */
+    border-radius: 8px; /* 与OCR项目输入框保持一致 */
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.param-group select:focus,
+.param-group input[type="number"]:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.param-group input[type="range"] {
+    flex: 1; /* 填充剩余空间 */
+    margin-right: 10px;
+}
+
+.param-group span {
+    font-weight: bold;
+    min-width: 30px; /* 确保数字显示完整 */
+    text-align: right;
+}
+
+.image-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.image-card {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: white; /* 与OCR项目面板背景一致 */
+}
+
+.image-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.actions {
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.actions button {
+    flex: 1;
+    padding: 12px; /* 与OCR项目action-btn保持一致 */
+    background: #f1f3f4;
+    border: none;
+    border-radius: 8px; /* 与OCR项目action-btn保持一致 */
+    cursor: pointer;
+    font-weight: 600; /* 与OCR项目action-btn保持一致 */
+    transition: all 0.3s; /* 与OCR项目action-btn保持一致 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.actions button:hover {
+    background: #e8eaed; /* 与OCR项目action-btn hover保持一致 */
+}
+
+/* 错误消息样式与OCR项目保持一致 */
+.error-message {
+    background-color: #ffebee;
+    color: var(--error); /* 使用OCR项目定义的错误颜色 */
+    border: 1px solid var(--error);
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .function-selector {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .function-btn {
+        width: 100%;
+    }
+    .param-group label {
+        flex: none;
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 5px;
+    }
+    .param-group select,
+    .param-group input[type="number"],
+    .param-group input[type="range"] {
+        width: 100%;
+    }
+    .param-group input[type="range"] + span {
+        width: 100%;
+        text-align: left;
+        margin-top: -10px;
+    }
+}
+
 .features {
     display: flex;
     flex-wrap: wrap;
@@ -400,4 +606,80 @@ footer {
 
 .hidden-input {
     display: none;
+}
+
+/* 新增的样式 */
+.small-upload-area {
+    min-height: 120px; /* 调整高度 */
+    padding: 20px; /* 调整内边距 */
+}
+
+.small-upload-area i {
+    font-size: 2.5rem; /* 调整图标大小 */
+}
+
+.image-preview-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.image-preview-container .image-preview {
+    max-width: 100%;
+    max-height: 150px; /* 调整预览图片的最大高度 */
+    display: block;
+}
+
+.clear-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: var(--primary);
+    box-shadow: none;
+    transition: all 0.2s ease;
+}
+
+.clear-btn:hover {
+    color: var(--error);
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* 针对OCR面板内的清除按钮，增加特异性以确保样式生效 */
+#ocrPanel .image-preview-container .clear-btn,
+#ocrPanel .pdf-preview-container .clear-btn {
+    width: 16px; /* 确保尺寸 */
+    height: 16px; /* 确保尺寸 */
+    font-size: 0.7rem; /* 确保字体大小 */
+    color: var(--primary); /* 确保颜色 */
+    background: transparent; /* 确保背景透明 */
+    box-shadow: none; /* 确保无阴影 */
+    top: 8px; /* 确保位置 */
+    right: 8px; /* 确保位置 */
+    z-index: 10; /* 确保在PDF页面之上 */
+}
+
+/* 针对图像生成面板内的清除按钮，也增加特异性 */
+#imageGenerationPanel .image-preview-container .clear-btn {
+    width: 16px;
+    height: 16px;
+    font-size: 0.7rem;
+    color: var(--primary);
+    background: transparent;
+    box-shadow: none;
+    top: 8px;
+    right: 8px;
 }

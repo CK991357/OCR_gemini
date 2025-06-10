@@ -21,6 +21,16 @@
             </div>
         </header>
 
+        <!-- 新增功能选择器 -->
+        <div class="function-selector">
+            <div class="function-btn active" id="ocrFunction">
+                <i class="fas fa-font"></i> OCR文本识别
+            </div>
+            <div class="function-btn" id="imageGenerationFunction">
+                <i class="fas fa-image"></i> 图像生成
+            </div>
+        </div>
+
         <div class="features">
             <div class="feature-card">
                 <i class="fas fa-file-image"></i>
@@ -44,7 +54,7 @@
             </div>
         </div>
 
-        <div class="content">
+        <div class="content" id="ocrPanel"> <!-- 为现有OCR内容添加ID -->
             <div class="panel">
                 <h2 class="panel-title"><i class="fas fa-upload"></i> 上传文件</h2>
                 
@@ -64,8 +74,11 @@
                     <p>点击或拖放文件到此处上传</p>
                     <p><small>支持 JPG, PNG, WEBP, PDF 格式</small></p>
                     <div class="file-info" id="fileInfo">未选择文件</div>
-                    <img id="imagePreview" class="image-preview" alt="预览图片">
-                    <div class="pdf-preview-container" id="pdfPreview"></div>
+                    <div class="image-preview-container">
+                        <img id="imagePreview" class="image-preview" alt="预览图片">
+                    </div>
+                    <div class="pdf-preview-container" id="pdfPreview">
+                    </div>
                 </div>
                 <input type="file" id="fileInput" accept="image/*,.pdf" class="hidden-input" aria-label="文件上传">
                 
@@ -99,6 +112,103 @@
                     <button class="action-btn primary" id="downloadBtn" disabled>
                         <i class="fas fa-download"></i> 下载结果
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增图像生成面板 -->
+        <div id="imageGenerationPanel" class="content" style="display: none;">
+            <div class="panel">
+                <h2 class="panel-title"><i class="fas fa-edit"></i> 提示词设置</h2>
+                
+                <div class="form-section">
+                    <label for="prompt">提示词 (Prompt):</label>
+                    <div class="prompt-wrapper">
+                        <textarea id="imageGenPrompt" rows="4" placeholder="输入图像描述，例如：星空下的雪山，极光，4K高清"></textarea> <!-- 修改ID -->
+                        <button id="expandPromptButton" class="expand-button">自动扩写</button> <!-- 修改ID -->
+                    </div>
+
+                    <div class="param-group">
+                        <label for="negative_prompt">负面提示 (可选):</label>
+                        <textarea id="imageGenNegativePrompt" rows="2" placeholder="输入不希望出现在图像中的内容"></textarea> <!-- 修改ID -->
+                    </div>
+                    <!-- 新增图生图图片上传区域 -->
+                    <div class="param-group">
+                        <label for="imageGenFileInput">源图片 (可选，用于图生图):</label>
+                        <div class="upload-area small-upload-area" id="imageGenDropArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>点击或拖放图片到此处上传</p>
+                            <p><small>支持 JPG, PNG, WEBP 格式</small></p>
+                            <div class="file-info" id="imageGenFileInfo">未选择图片</div>
+                            <div class="image-preview-container">
+                                <img id="imageGenImagePreview" class="image-preview" alt="预览图片">
+                                <button id="imageGenClearImageBtn" class="clear-btn" style="display: none;"><i class="fas fa-times-circle"></i></button>
+                            </div>
+                        </div>
+                        <input type="file" id="imageGenFileInput" accept="image/*" class="hidden-input" aria-label="图生图文件上传">
+                    </div>
+                    <!-- 新增 Siliconflow API 密钥输入框 -->
+                    <div class="param-group">
+                        <label for="siliconflowApiKey">Siliconflow API 密钥:</label>
+                        <input type="text" class="api-key-input" id="siliconflowApiKey" placeholder="输入 Siliconflow API 密钥">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title"><i class="fas fa-cogs"></i> 生成参数</h2>
+                
+                <div class="param-group">
+                    <label for="image_size">图像尺寸:</label>
+                    <select id="imageGenImageSize"> <!-- 修改ID -->
+                        <option value="1024x1024">1024x1024 (方形)</option>
+                        <option value="960x1280">960x1280 (竖版)</option>
+                        <option value="768x1024">768x1024 (竖版)</option>
+                        <option value="720x1440">720x1440 (竖版)</option>
+                        <option value="720x1280">720x1280 (竖版)</option>
+                        <option value="others">自定义</option>
+                    </select>
+                </div>
+                
+                <div class="param-group">
+                    <label for="batch_size">生成数量 (1-4):</label>
+                    <input type="range" id="imageGenBatchSize" min="1" max="4" value="1"> <!-- 修改ID -->
+                    <span id="imageGenBatchSizeValue">1</span> <!-- 修改ID -->
+                </div>
+                
+                <div class="param-group">
+                    <label for="num_inference_steps">推理步数 (1-100):</label>
+                    <input type="range" id="imageGenNumInferenceSteps" min="1" max="100" value="20"> <!-- 修改ID -->
+                    <span id="imageGenNumInferenceStepsValue">20</span> <!-- 修改ID -->
+                </div>
+                
+                <div class="param-group">
+                    <label for="guidance_scale">引导系数 (0-20):</label>
+                    <input type="range" id="imageGenGuidanceScale" min="0" max="20" step="0.1" value="7.5"> <!-- 修改ID -->
+                    <span id="imageGenGuidanceScaleValue">7.5</span> <!-- 修改ID -->
+                </div>
+                
+                <div class="param-group">
+                    <label for="seed">随机种子 (可选):</label>
+                    <input type="number" id="imageGenSeed" min="0" max="9999999999" placeholder="留空则随机"> <!-- 修改ID -->
+                </div>
+                
+                <button id="generateImageBtn" class="btn">
+                    <i class="fas fa-sync"></i> 生成图像
+                </button>
+                
+                <div class="loading" id="imageGenerationLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p id="imageGenerationLoadingText">正在生成图像...</p>
+                </div>
+                
+                <div id="imageGenerationError" class="error-message" style="display: none;"></div>
+            </div>
+            
+            <div class="panel">
+                <h2 class="panel-title"><i class="fas fa-images"></i> 生成结果</h2>
+                <div id="imageResults" class="image-results">
+                    <!-- 图片将在这里显示 -->
                 </div>
             </div>
         </div>
