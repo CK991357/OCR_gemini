@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInfo = document.getElementById('fileInfo');
     const imagePreview = document.getElementById('imagePreview');
     const pdfPreview = document.getElementById('pdfPreview');
-    const apiKeyInput = document.getElementById('apiKey');
     const analyzeBtn = document.getElementById('analyzeBtn');
     const loading = document.getElementById('loading');
     const loadingText = document.getElementById('loadingText');
@@ -41,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageGenerationError = document.getElementById('imageGenerationError');
     const imageResultsDiv = document.getElementById('imageResults');
     const expandPromptButton = document.getElementById('expandPromptButton');
-    const siliconflowApiKeyInput = document.getElementById('siliconflowApiKey'); // 新增 Siliconflow API 密钥输入框的引用
 
     // 新增图生图相关元素
     const imageGenDropArea = document.getElementById('imageGenDropArea');
@@ -60,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     ocrPanel.style.display = 'grid';
     imageGenerationPanel.style.display = 'none';
     updateOcrButtonState(); // 更新OCR分析按钮状态
-    updateImageGenButtonState(); // 更新图像生成按钮状态
+    // updateImageGenButtonState(); // 更新图像生成按钮状态 - 移除，因为不再需要API Key检查
 
     // 功能切换事件监听
     ocrFunctionBtn.addEventListener('click', () => {
@@ -70,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
         imageGenerationPanel.style.display = 'none';
         currentFunction = 'ocr';
         updateOcrButtonState(); // 切换到OCR时更新OCR分析按钮状态
-        updateImageGenButtonState(); // 确保图像生成按钮在切换时也更新状态
+        // updateImageGenButtonState(); // 确保图像生成按钮在切换时也更新状态 - 移除，因为不再需要API Key检查
     });
 
     imageGenerationFunctionBtn.addEventListener('click', () => {
@@ -80,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         imageGenerationPanel.style.display = 'block';
         currentFunction = 'imageGen';
         updateOcrButtonState(); // 确保OCR分析按钮在切换时也更新状态
-        updateImageGenButtonState(); // 切换到图像生成时更新按钮状态
+        // updateImageGenButtonState(); // 切换到图像生成时更新按钮状态 - 移除，因为不再需要API Key检查
     });
 
     // OCR模式切换 (保留原有逻辑)
@@ -112,20 +110,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     /**
      * @function updateOcrButtonState
-     * @description 根据当前功能模式和Gemini API Key状态更新OCR分析按钮的禁用状态。
+     * @description 根据当前功能模式和文件选择状态更新OCR分析按钮的禁用状态。
      * @returns {void}
      */
     function updateOcrButtonState() {
-        analyzeBtn.disabled = !(apiKeyInput.value.trim() !== '' && selectedFile && currentFunction === 'ocr');
+        analyzeBtn.disabled = !(selectedFile && currentFunction === 'ocr');
     }
 
     /**
      * @function updateImageGenButtonState
-     * @description 根据当前功能模式、Siliconflow API Key和提示词状态更新图像生成按钮的禁用状态。
+     * @description 根据当前功能模式和提示词状态更新图像生成按钮的禁用状态。
      * @returns {void}
      */
     function updateImageGenButtonState() {
-        generateImageBtn.disabled = !(siliconflowApiKeyInput.value.trim() !== '' && imageGenPromptInput.value.trim() !== '' && currentFunction === 'imageGen');
+        generateImageBtn.disabled = !(imageGenPromptInput.value.trim() !== '' && currentFunction === 'imageGen');
     }
     
     // OCR文件上传区域事件监听
@@ -345,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         updateOcrButtonState();
-        updateImageGenButtonState();
+        // updateImageGenButtonState(); // 移除，因为不再需要API Key检查
     }
     
     // 清除图像生成图片
@@ -359,13 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateImageGenButtonState();
     });
 
-    // 监听API密钥输入
-    apiKeyInput.addEventListener('input', function() {
-        updateOcrButtonState(); // Gemini API Key输入变化只更新OCR分析按钮状态
-    });
-
-    // 为新的 Siliconflow API 密钥输入框添加事件监听
-    siliconflowApiKeyInput.addEventListener('input', updateImageGenButtonState);
     // 为图像生成提示词输入框添加事件监听
     imageGenPromptInput.addEventListener('input', updateImageGenButtonState);
     
@@ -376,11 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        const apiKey = apiKeyInput.value.trim();
-        if (!apiKey) {
-            alert('请输入API密钥');
-            return;
-        }
+        // API 密钥现在由 Worker 管理，前端无需输入
         
         // 显示加载状态
         loading.style.display = 'block';
@@ -439,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function() {
 根据上述提取和分类的要素，生成一个中文的Comfy UI提示词模板。这个提示词应该是一个连贯的描述，包含所有关键细节，可以直接用于文生图。`;
                 
                 loadingText.textContent = currentMode === 'ocr' ? '正在识别图片文字...' : '正在分析图片内容...';
-                const result = await callGeminiAPI(base64Data, apiKey, promptText);
+                const result = await callGeminiAPI(base64Data, promptText); // 移除 apiKey 参数
                 fullText = result;
 
             } else if (selectedFile.type === 'application/pdf') {
@@ -451,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     progressBar.style.width = `${((i + 1) / pageImages.length) * 100}%`; // 进度条更新
                     
                     const promptText = "请提取此PDF页面中的所有文字内容，包括标点符号和特殊字符。直接返回文本内容，不需要任何解释或描述。";
-                    const pageText = await callGeminiAPI(pageImages[i], apiKey, promptText);
+                    const pageText = await callGeminiAPI(pageImages[i], promptText); // 移除 apiKey 参数
                     
                     fullText += `\n\n--- Page ${pageNum} ---\n\n${pageText}`;
                     resultContent.textContent = fullText; // 实时更新结果
@@ -477,12 +464,11 @@ document.addEventListener('DOMContentLoaded', function() {
      * @function callGeminiAPI
      * @description 调用Gemini API进行文本提取或图片描述。
      * @param {string} imageData - Base64编码的图片数据。
-     * @param {string} apiKey - Gemini API密钥。
      * @param {string} promptText - 发送给模型的提示词。
      * @returns {Promise<string>} - 返回一个Promise，解析为识别到的文本内容。
      * @throws {Error} - 如果API请求失败或未获取到有效结果。
      */
-    async function callGeminiAPI(imageData, apiKey, promptText) {
+    async function callGeminiAPI(imageData, promptText) { // 移除 apiKey 参数
         const requestData = {
             model: "gemini-2.0-flash",
             messages: [
@@ -504,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ]
         };
         
-        const response = await fetch(`https://geminiapim.10110531.xyz/chat/completions?key=${apiKey}`, {
+        const response = await fetch(`/api/gemini`, { // 修改为代理端点
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -656,10 +642,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ]
         };
         
-        const apiKey = apiKeyInput.value.trim();
-        if (!apiKey) throw new Error('API密钥未提供');
-        
-        const response = await fetch(`https://geminiapim.10110531.xyz/chat/completions?key=${apiKey}`, {
+        const response = await fetch(`/api/gemini`, { // 修改为代理端点
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData)
@@ -685,11 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * @throws {Error} - 如果API请求失败。
      */
     async function generateImages() {
-        const apiKey = siliconflowApiKeyInput.value.trim(); // 从Siliconflow API密钥输入框获取密钥
-        if (!apiKey) {
-            showError(imageGenerationError, '请输入Siliconflow API密钥');
-            return;
-        }
+        // API 密钥现在由 Worker 管理，前端无需输入
         
         const prompt = imageGenPromptInput.value.trim();
         if (!prompt) {
@@ -717,12 +696,11 @@ document.addEventListener('DOMContentLoaded', function() {
         imageResultsDiv.innerHTML = ''; // 清空之前的图片
         
         try {
-            // 调用Silicon Flow API
-            const response = await fetch('https://api.siliconflow.cn/v1/images/generations', {
+            // 调用代理 API
+            const response = await fetch('/api/siliconflow', { // 修改为代理端点
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
+                    'Content-Type': 'application/json' // Authorization 头由 Worker 添加
                 },
                 body: JSON.stringify(params)
             });
