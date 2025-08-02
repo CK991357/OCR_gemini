@@ -9,10 +9,10 @@
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
-    const apiKey = env.GEMINI_API_KEY;
+    const authKey = env.AUTH_KEY;
     
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: "Gemini API key not configured" }), {
+    if (!authKey) {
+      return new Response(JSON.stringify({ error: "AUTH_KEY not configured in Cloudflare environment" }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -21,10 +21,13 @@ export async function onRequestPost(context) {
     // 获取原始请求体
     const body = await request.text();
     
-    // 转发请求到 Gemini API
-    const response = await fetch(`https://geminiapim.10110531.xyz/chat/completions?key=${apiKey}`, {
+    // 准备新的请求头，并转发到新的 worker 端点
+    const headers = new Headers(request.headers);
+    headers.set('Authorization', `Bearer ${authKey}`);
+    
+    const response = await fetch(`https://geminiapim.10110531.xyz/chat/completions`, {
       method: 'POST',
-      headers: request.headers,
+      headers: headers,
       body: body
     });
     
