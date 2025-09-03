@@ -814,11 +814,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedModel === "Kwai-Kolors/Kolors") {
                 imageUrls = data.data;
             } else if (selectedModel === "google/gemini-2.5-flash-image-preview:free") {
-                // OpenRouter (Gemini) 返回的是文本内容，需要提取可能的图片URL
-                const geminiContent = data.choices[0].message.content;
-                // 暂时假设Gemini不直接返回图片，而是描述，如果需要生成图片，需要另行处理
-                showError(imageGenerationError, 'Gemini模型目前只返回文本描述，不直接生成图像。如果需要图片，请在OCR面板的“图片内容描述”模式下使用。');
-                return; // 不显示图片结果
+                // OpenRouter (Gemini) 作为生图模型，其结果应该包含 images 数组
+                if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.images) {
+                    imageUrls = data.choices[0].message.images;
+                } else {
+                    // 如果没有图片，但有文本内容，则显示文本内容
+                    const geminiContent = data.choices[0].message.content;
+                    if (geminiContent) {
+                        imageResultsDiv.innerHTML = `<div class="gemini-text-result">${geminiContent}</div>`;
+                        return; // 只显示文本结果
+                    }
+                    throw new Error('Gemini模型未返回有效的图像或文本内容');
+                }
             }
             
             // 显示结果
