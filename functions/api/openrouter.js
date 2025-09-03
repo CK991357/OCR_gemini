@@ -80,21 +80,39 @@ export async function onRequestPost(context) {
 
     const data = await response.json();
 
-    // Extract the content from the response, which could be an image or text.
-    // Based on the reference, the model might return a base64 string directly in the content.
-    const messageContent = data.choices?.[0]?.message?.content;
+    // --- START: MODIFIED RESPONSE HANDLING LOGIC ---
+    // Based on the logic from the reference main.ts file.
+    const message = data.choices?.[0]?.message;
+    let imageUrl = null;
 
-    if (messageContent) {
-        return new Response(JSON.stringify({ data: messageContent }), {
+    // Case 1: Image is in message.images array (less common for vision models)
+    if (message?.images?.[0]?.image_url?.url) {
+        imageUrl = message.images[0].image_url.url;
+    }
+    // Case 2: Image is a base64 data URL directly in message.content
+    else if (typeof message?.content === 'string' && message.content.startsWith('data:image/')) {
+        imageUrl = message.content;
+    }
+    // Case 3: Sometimes the URL might be in a tool_calls part (for some models)
+    // For now, we stick to the two primary cases from main.ts.
+
+    if (imageUrl) {
+        return new Response(JSON.stringify({ data: imageUrl }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' }
         });
     } else {
-         return new Response(JSON.stringify({ error: "Model did not return any content.", details: data }), {
+         // Log the full response for debugging if no image is found
+         console.error("OpenRouter Debug: No valid image URL found in response.", JSON.stringify(data, null, 2));
+         return new Response(JSON.stringify({
+             error: "Model did not return a valid image. Check the console logs for the full API response.",
+             details: data
+         }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });
     }
+    // --- END: MODIFIED RESPONSE HANDLING LOGIC ---
 
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {

@@ -271,6 +271,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (this.files && this.files[0]) {
             handleFile(this.files[0], 'imageGen');
         }
+        // 重置 input 的值，以确保可以重新选择同一个文件
+        this.value = '';
     });
     
     /**
@@ -694,6 +696,8 @@ document.addEventListener('DOMContentLoaded', function() {
     geminiImageUploadInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
         handleGeminiFiles(files);
+        // 重置 input 的值，以确保可以重新选择同一个文件
+        e.target.value = '';
     });
 
     function handleGeminiDrop(e) {
