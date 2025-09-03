@@ -115,18 +115,18 @@
                     </div>
                     <!-- 新增图生图图片上传区域 -->
                     <div class="param-group">
-                        <label for="imageGenFileInput">源图片 (可选，用于图生图):</label>
+                        <label for="imageGenFileInput">源图片 (可选，用于图生图，可多选):</label>
                         <div class="upload-area small-upload-area" id="imageGenDropArea">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <p>点击或拖放图片到此处上传</p>
-                            <p><small>支持 JPG, PNG, WEBP 格式</small></p>
+                            <p><small>支持 JPG, PNG, WEBP 格式，可多选</small></p>
                             <div class="file-info" id="imageGenFileInfo">未选择图片</div>
-                            <div class="image-preview-container">
-                                <img id="imageGenImagePreview" class="image-preview" alt="预览图片">
-                                <button id="imageGenClearImageBtn" class="clear-btn" style="display: none;"><i class="fas fa-times-circle"></i></button>
+                            <div class="image-preview-container" id="imageGenPreviewsContainer"> <!-- 修改ID，用于显示多个图片 -->
+                                <!-- 多个图片预览将在这里显示 -->
                             </div>
+                            <button id="imageGenClearImageBtn" class="clear-btn" style="display: none;"><i class="fas fa-times-circle"></i> 清除所有图片</button>
                         </div>
-                        <input type="file" id="imageGenFileInput" accept="image/*" class="hidden-input" aria-label="图生图文件上传">
+                        <input type="file" id="imageGenFileInput" accept="image/*" multiple class="hidden-input" aria-label="图生图文件上传"> <!-- 添加 multiple 属性 -->
                     </div>
                     <!-- 新增 Siliconflow API 密钥输入框 -->
                     <div class="api-key-info">
@@ -139,6 +139,14 @@
             <div class="panel">
                 <h2 class="panel-title"><i class="fas fa-cogs"></i> 生成参数</h2>
                 
+                <div class="param-group">
+                    <label for="image_model">图像生成模型:</label>
+                    <select id="imageGenModelSelect">
+                        <option value="Kwai-Kolors/Kolors">Kwai-Kolors/Kolors</option>
+                        <option value="google/gemini-2.5-flash-image-preview:free">Google Gemini 2.5 Flash</option>
+                    </select>
+                </div>
+
                 <div class="param-group">
                     <label for="image_size">图像尺寸:</label>
                     <select id="imageGenImageSize"> <!-- 修改ID -->

@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageGenerationFunctionBtn = document.getElementById('imageGenerationFunction'); // 图像生成功能切换按钮
     const imageGenPromptInput = document.getElementById('imageGenPrompt');
     const imageGenNegativePromptInput = document.getElementById('imageGenNegativePrompt');
+    const imageGenModelSelect = document.getElementById('imageGenModelSelect'); // 新增模型选择元素
     const imageGenImageSizeSelect = document.getElementById('imageGenImageSize');
     const imageGenBatchSizeInput = document.getElementById('imageGenBatchSize');
     const imageGenBatchSizeValueSpan = document.getElementById('imageGenBatchSizeValue');
@@ -35,6 +36,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageGenGuidanceScaleValueSpan = document.getElementById('imageGenGuidanceScaleValue');
     const imageGenSeedInput = document.getElementById('imageGenSeed');
     const generateImageBtn = document.getElementById('generateImageBtn');
+
+    // Kolors/Siliconflow 独有的参数组
+    const kolorsParamGroups = [
+        imageGenImageSizeSelect.closest('.param-group'),
+        imageGenBatchSizeInput.closest('.param-group'),
+        imageGenNumInferenceStepsInput.closest('.param-group'),
+        imageGenGuidanceScaleInput.closest('.param-group'),
+        imageGenSeedInput.closest('.param-group')
+    ];
     const imageGenerationLoading = document.getElementById('imageGenerationLoading');
     const imageGenerationLoadingText = document.getElementById('imageGenerationLoadingText');
     const imageGenerationError = document.getElementById('imageGenerationError');
@@ -45,14 +55,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageGenDropArea = document.getElementById('imageGenDropArea');
     const imageGenFileInput = document.getElementById('imageGenFileInput');
     const imageGenFileInfo = document.getElementById('imageGenFileInfo');
-    const imageGenImagePreview = document.getElementById('imageGenImagePreview');
+    const imageGenPreviewsContainer = document.getElementById('imageGenPreviewsContainer'); // 新增多图片预览容器
     const imageGenClearImageBtn = document.getElementById('imageGenClearImageBtn');
 
     let selectedFile = null;
     let pdfDoc = null;
     let pageImages = []; // 用于存储PDF每页的Base64图片数据
     let currentFunction = 'ocr'; // 默认功能为OCR
-    let imageGenSourceImageBase64 = null; // 用于存储图生图的Base64图片数据
+    let imageGenSourceImageBase64Array = []; // 用于存储图生图的Base64图片数据数组
+    const MAX_GEMINI_IMAGES = 3; // Gemini模型单次请求图片数量上限
 
     // 初始化功能面板显示
     ocrPanel.style.display = 'grid';
@@ -123,6 +134,29 @@ document.addEventListener('DOMContentLoaded', function() {
      * @returns {void}
      */
     function updateImageGenButtonState() {
+        const selectedModel = imageGenModelSelect.value;
+        const isKolorsModel = selectedModel === "Kwai-Kolors/Kolors";
+        const isGeminiModel = selectedModel === "google/gemini-2.5-flash-image-preview:free";
+        
+        // 只有Kolors模型需要这些参数，Gemini模型不需要
+        kolorsParamGroups.forEach(group => {
+            if (group) { // 检查group是否为null
+                group.style.display = isKolorsModel ? 'block' : 'none';
+                Array.from(group.querySelectorAll('input, select')).forEach(input => {
+                    input.disabled = !isKolorsModel;
+                });
+            }
+        });
+
+        // 图片上传区域的隔离
+        if (isGeminiModel || isKolorsModel) {
+            imageGenDropArea.style.display = 'block'; // 保持上传区域可见
+            imageGenFileInput.multiple = isGeminiModel; // Gemini支持多选，Kolors不支持
+        } else {
+            imageGenDropArea.style.display = 'none';
+        }
+
+        // 图像生成按钮的禁用状态取决于提示词是否为空，以及当前是否处于图像生成模式
         generateImageBtn.disabled = !(imageGenPromptInput.value.trim() !== '' && currentFunction === 'imageGen');
     }
     
@@ -215,9 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
      * @returns {void}
      */
     function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const file = dt.files[0];
-        handleFile(file, 'ocr');
+        const files = Array.from(e.dataTransfer.files); // 获取所有拖放的文件
+        handleFiles(files, 'ocr');
     }
 
     /**
@@ -227,36 +260,36 @@ document.addEventListener('DOMContentLoaded', function() {
      * @returns {void}
      */
     function handleImageGenDrop(e) {
-        const dt = e.dataTransfer;
-        const file = dt.files[0];
-        handleFile(file, 'imageGen');
+        const files = Array.from(e.dataTransfer.files); // 获取所有拖放的文件
+        handleFiles(files, 'imageGen');
     }
     
     // 处理文件选择
     fileInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            handleFile(this.files[0], 'ocr');
+        if (this.files && this.files.length > 0) {
+            handleFiles(Array.from(this.files), 'ocr');
         }
     });
 
     imageGenFileInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            handleFile(this.files[0], 'imageGen');
+        if (this.files && this.files.length > 0) {
+            handleFiles(Array.from(this.files), 'imageGen');
         }
     });
     
     /**
-     * @function handleFile
+     * @function handleFiles
      * @description 处理文件选择或拖放，进行文件类型检查和文件信息/图片/PDF预览显示。
-     * @param {File} file - 用户选择或拖放的文件对象。
+     * @param {File[]} files - 用户选择或拖放的文件对象数组。
      * @param {string} type - 文件处理类型 ('ocr' 或 'imageGen')。
      * @returns {Promise<void>}
      */
-    async function handleFile(file, type) {
+    async function handleFiles(files, type) {
         const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
         const validPDFType = 'application/pdf';
         
         if (type === 'ocr') {
+            const file = files[0]; // OCR只处理第一个文件
             if (!validImageTypes.includes(file.type) && file.type !== validPDFType) {
                 alert('OCR功能请上传图片文件（JPG, PNG, WEBP）或PDF文件');
                 return;
@@ -324,18 +357,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 loading.style.display = 'none';
             }
         } else if (type === 'imageGen') {
-            if (!validImageTypes.includes(file.type)) {
-                alert('图像生成功能请上传图片文件（JPG, PNG, WEBP）');
-                return;
-            }
-            imageGenFileInfo.textContent = `${file.name} (${formatFileSize(file.size)})`;
-            imageGenImagePreview.style.display = 'none';
+            imageGenPreviewsContainer.innerHTML = ''; // 清空现有预览
+            imageGenSourceImageBase64Array = []; // 清空数据数组
             imageGenClearImageBtn.style.display = 'none';
 
+            if (files.length === 0) {
+                imageGenFileInfo.textContent = '未选择图片';
+                updateImageGenButtonState();
+                return;
+            }
+
+            let totalSize = 0;
+            let allFilesValid = true;
+
+            for (const file of files) {
+                if (!validImageTypes.includes(file.type)) {
+                    alert(`图像生成功能不支持文件类型: ${file.name} (${file.type})。请上传图片文件（JPG, PNG, WEBP）`);
+                    allFilesValid = false;
+                    continue;
+                }
+                totalSize += file.size;
+            }
+
+            if (!allFilesValid) {
+                imageGenFileInfo.textContent = '部分文件类型不符合要求';
+                updateImageGenButtonState();
+                return;
+            }
+
+            imageGenFileInfo.textContent = `${files.length} 个文件 (${formatFileSize(totalSize)})`;
+
             try {
-                imageGenSourceImageBase64 = await fileToBase64(file);
-                imageGenImagePreview.src = imageGenSourceImageBase64;
-                imageGenImagePreview.style.display = 'block';
+                for (const file of files) {
+                    const base64Data = await fileToBase64(file);
+                    imageGenSourceImageBase64Array.push(base64Data);
+
+                    const imgElement = document.createElement('img');
+                    imgElement.src = base64Data;
+                    imgElement.className = 'image-preview';
+                    imgElement.alt = '预览图片';
+                    imageGenPreviewsContainer.appendChild(imgElement);
+                }
                 imageGenClearImageBtn.style.display = 'block';
             } catch (error) {
                 console.error('图像生成文件处理错误:', error);
@@ -347,18 +409,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 清除图像生成图片
-    imageGenClearImageBtn.addEventListener('click', () => {
-        imageGenImagePreview.src = '';
-        imageGenImagePreview.style.display = 'none';
+    imageGenClearImageBtn.addEventListener('click', (event) => { // 传入事件对象
+        event.stopPropagation(); // 阻止事件冒泡到父元素
+        imageGenPreviewsContainer.innerHTML = '';
         imageGenClearImageBtn.style.display = 'none';
         imageGenFileInput.value = ''; // 清除文件输入
-        imageGenSourceImageBase64 = null;
+        imageGenSourceImageBase64Array = [];
         imageGenFileInfo.textContent = '未选择图片';
         updateImageGenButtonState();
     });
 
-    // 为图像生成提示词输入框添加事件监听
+    // 为图像生成提示词输入框和模型选择框添加事件监听
     imageGenPromptInput.addEventListener('input', updateImageGenButtonState);
+    imageGenModelSelect.addEventListener('change', updateImageGenButtonState); // 新增模型选择监听
+
+    // 初始调用以设置正确的状态
+    updateImageGenButtonState();
     
     // 分析按钮点击事件
     analyzeBtn.addEventListener('click', async function() {
@@ -668,8 +734,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * @throws {Error} - 如果API请求失败。
      */
     async function generateImages() {
-        // API 密钥现在由 Worker 管理，前端无需输入
-        
+        const selectedModel = imageGenModelSelect.value;
         const prompt = imageGenPromptInput.value.trim();
         if (!prompt) {
             showError(imageGenerationError, '提示词不能为空');
@@ -677,18 +742,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 准备参数
-        const params = {
-            model: "Kwai-Kolors/Kolors", // 根据文档，模型固定
-            prompt: prompt,
-            negative_prompt: imageGenNegativePromptInput.value.trim() || undefined,
-            image_size: imageGenImageSizeSelect.value,
-            batch_size: parseInt(imageGenBatchSizeInput.value),
-            num_inference_steps: parseInt(imageGenNumInferenceStepsInput.value),
-            guidance_scale: parseFloat(imageGenGuidanceScaleInput.value),
-            seed: imageGenSeedInput.value ? parseInt(imageGenSeedInput.value) : undefined,
-            image: imageGenSourceImageBase64 || undefined // 添加图生图的图片数据
-        };
-        
+        let apiUrl = '';
+        let requestBody = {};
+
+        if (selectedModel === "Kwai-Kolors/Kolors") {
+            apiUrl = '/api/siliconflow';
+            requestBody = {
+                model: selectedModel,
+                prompt: prompt,
+                negative_prompt: imageGenNegativePromptInput.value.trim() || undefined,
+                image_size: imageGenImageSizeSelect.value,
+                batch_size: parseInt(imageGenBatchSizeInput.value),
+                num_inference_steps: parseInt(imageGenNumInferenceStepsInput.value),
+                guidance_scale: parseFloat(imageGenGuidanceScaleInput.value),
+                seed: imageGenSeedInput.value ? parseInt(imageGenSeedInput.value) : undefined,
+                image: imageGenSourceImageBase64 || undefined
+            };
+        } else if (selectedModel === "google/gemini-2.5-flash-image-preview:free") {
+            apiUrl = '/api/openrouter'; // 新的OpenRouter代理端点
+            requestBody = {
+                model: selectedModel,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt }
+                        ]
+                    }
+                ]
+            };
+            if (imageGenSourceImageBase64) {
+                requestBody.messages[0].content.push({
+                    type: "image_url",
+                    image_url: { url: imageGenSourceImageBase64 }
+                });
+            }
+        } else {
+            showError(imageGenerationError, '未知的图像生成模型');
+            return;
+        }
+
         // 显示加载
         imageGenerationLoading.style.display = 'block';
         imageGenerationLoadingText.textContent = '正在生成图像...';
@@ -697,12 +790,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             // 调用代理 API
-            const response = await fetch('/api/siliconflow', { // 修改为代理端点
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json' // Authorization 头由 Worker 添加
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(params)
+                body: JSON.stringify(requestBody)
             });
             
             if (!response.ok) {
@@ -711,8 +804,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const data = await response.json();
+
+            // 根据模型处理返回结果
+            let imageUrls = [];
+            if (selectedModel === "Kwai-Kolors/Kolors") {
+                imageUrls = data.data;
+            } else if (selectedModel === "google/gemini-2.5-flash-image-preview:free") {
+                // OpenRouter (Gemini) 返回的是文本内容，需要提取可能的图片URL
+                const geminiContent = data.choices[0].message.content;
+                // 暂时假设Gemini不直接返回图片，而是描述，如果需要生成图片，需要另行处理
+                showError(imageGenerationError, 'Gemini模型目前只返回文本描述，不直接生成图像。如果需要图片，请在OCR面板的“图片内容描述”模式下使用。');
+                return; // 不显示图片结果
+            }
+            
             // 显示结果
-            displayImageResults(data.data);
+            displayImageResults(imageUrls);
         } catch (error) {
             showError(imageGenerationError, error.message);
         } finally {
