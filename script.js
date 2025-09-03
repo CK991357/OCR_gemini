@@ -42,17 +42,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const expandPromptButton = document.getElementById('expandPromptButton');
 
     // 新增图生图相关元素
-    const imageGenDropArea = document.getElementById('imageGenDropArea');
+    const kolorsImageDropArea = document.getElementById('kolorsImageDropArea');
     const imageGenFileInput = document.getElementById('imageGenFileInput');
     const imageGenFileInfo = document.getElementById('imageGenFileInfo');
     const imageGenImagePreview = document.getElementById('imageGenImagePreview');
     const imageGenClearImageBtn = document.getElementById('imageGenClearImageBtn');
+
+    // 新增模型切换和Gemini相关元素
+    const imageGenModelSelect = document.getElementById('imageGenModelSelect');
+    const kolorsParamsContainer = document.getElementById('kolorsParamsContainer');
+    const geminiParamsContainer = document.getElementById('geminiParamsContainer');
+    const geminiImageDropArea = document.getElementById('geminiImageDropArea');
+    const geminiImageUploadInput = document.getElementById('geminiImageUploadInput');
+    const geminiThumbnailsContainer = document.getElementById('geminiThumbnailsContainer');
+
 
     let selectedFile = null;
     let pdfDoc = null;
     let pageImages = []; // 用于存储PDF每页的Base64图片数据
     let currentFunction = 'ocr'; // 默认功能为OCR
     let imageGenSourceImageBase64 = null; // 用于存储图生图的Base64图片数据
+    let geminiSelectedFiles = []; // 用于存储Gemini多图上传的文件
 
     // 初始化功能面板显示
     ocrPanel.style.display = 'grid';
@@ -79,6 +89,22 @@ document.addEventListener('DOMContentLoaded', function() {
         currentFunction = 'imageGen';
         updateOcrButtonState(); // 确保OCR分析按钮在切换时也更新状态
         // updateImageGenButtonState(); // 切换到图像生成时更新按钮状态 - 移除，因为不再需要API Key检查
+    });
+
+    // 模型选择器事件监听
+    imageGenModelSelect.addEventListener('change', () => {
+        const selectedModel = imageGenModelSelect.value;
+        if (selectedModel === 'kolors') {
+            kolorsParamsContainer.style.display = 'block';
+            geminiParamsContainer.style.display = 'none';
+            // 切换时显示Kolors的图生图上传区域
+            document.querySelector('.param-group label[for="imageGenFileInput"]').parentElement.style.display = 'block';
+        } else if (selectedModel === 'gemini-vision') {
+            kolorsParamsContainer.style.display = 'none';
+            geminiParamsContainer.style.display = 'block';
+            // 切换到Gemini时隐藏Kolors的图生图上传区域
+            document.querySelector('.param-group label[for="imageGenFileInput"]').parentElement.style.display = 'none';
+        }
     });
 
     // OCR模式切换 (保留原有逻辑)
@@ -132,14 +158,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // 图像生成文件上传区域事件监听
-    imageGenDropArea.addEventListener('click', () => {
+    kolorsImageDropArea.addEventListener('click', () => {
         imageGenFileInput.click();
     });
 
     // 处理拖放事件的通用函数
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, preventDefaults, false);
-        imageGenDropArea.addEventListener(eventName, preventDefaults, false);
+        kolorsImageDropArea.addEventListener(eventName, preventDefaults, false);
+        geminiImageDropArea.addEventListener(eventName, preventDefaults, false); // 新增
     });
     
     /**
@@ -156,12 +183,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // 高亮和恢复上传区域样式的通用函数
     ['dragenter', 'dragover'].forEach(eventName => {
         dropArea.addEventListener(eventName, highlight, false);
-        imageGenDropArea.addEventListener(eventName, highlightImageGen, false);
+        kolorsImageDropArea.addEventListener(eventName, highlightImageGen, false);
     });
     
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, unhighlight, false);
-        imageGenDropArea.addEventListener(eventName, unhighlightImageGen, false);
+        kolorsImageDropArea.addEventListener(eventName, unhighlightImageGen, false);
     });
     
     /**
@@ -206,7 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 处理文件拖放
     dropArea.addEventListener('drop', handleDrop, false);
-    imageGenDropArea.addEventListener('drop', handleImageGenDrop, false);
+    kolorsImageDropArea.addEventListener('drop', handleImageGenDrop, false);
+    geminiImageDropArea.addEventListener('drop', handleGeminiDrop, false); // 新增
     
     /**
      * @function handleDrop
@@ -661,24 +689,92 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // --- Gemini 多图上传逻辑 (从 nanobanana-main/static/script.js 借鉴并改造) ---
+
+    geminiImageUploadInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
+        handleGeminiFiles(files);
+    });
+
+    function handleGeminiDrop(e) {
+        const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+        handleGeminiFiles(files);
+    }
+
+    function handleGeminiFiles(files) {
+        const totalFiles = geminiSelectedFiles.length + files.length;
+        if (totalFiles > 3) {
+            alert('最多只能上传 3 张图片');
+            return;
+        }
+        files.forEach(file => {
+            if (!geminiSelectedFiles.some(f => f.name === file.name)) {
+                geminiSelectedFiles.push(file);
+                createGeminiThumbnail(file);
+            }
+        });
+    }
+
+    function createGeminiThumbnail(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'thumbnail-wrapper';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.alt = file.name;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = () => {
+                geminiSelectedFiles = geminiSelectedFiles.filter(f => f.name !== file.name);
+                wrapper.remove();
+            };
+            
+            wrapper.appendChild(img);
+            wrapper.appendChild(removeBtn);
+            geminiThumbnailsContainer.appendChild(wrapper);
+        };
+        reader.readAsDataURL(file);
+    }
+
     /**
      * @function generateImages
-     * @description 调用Siliconflow API生成图像。
+     * @description 根据选择的模型调用相应的API生成图像。
      * @returns {Promise<void>}
-     * @throws {Error} - 如果API请求失败。
      */
     async function generateImages() {
-        // API 密钥现在由 Worker 管理，前端无需输入
-        
+        const selectedModel = imageGenModelSelect.value;
         const prompt = imageGenPromptInput.value.trim();
+
         if (!prompt) {
             showError(imageGenerationError, '提示词不能为空');
             return;
         }
-        
-        // 准备参数
+
+        imageGenerationLoading.style.display = 'block';
+        imageGenerationLoadingText.textContent = '正在生成图像...';
+        imageGenerationError.style.display = 'none';
+        imageResultsDiv.innerHTML = '';
+
+        try {
+            if (selectedModel === 'kolors') {
+                await generateWithKolors(prompt);
+            } else if (selectedModel === 'gemini-vision') {
+                await generateWithGeminiVision(prompt);
+            }
+        } catch (error) {
+            showError(imageGenerationError, error.message);
+        } finally {
+            imageGenerationLoading.style.display = 'none';
+        }
+    }
+
+    async function generateWithKolors(prompt) {
         const params = {
-            model: "Kwai-Kolors/Kolors", // 根据文档，模型固定
+            model: "Kwai-Kolors/Kolors",
             prompt: prompt,
             negative_prompt: imageGenNegativePromptInput.value.trim() || undefined,
             image_size: imageGenImageSizeSelect.value,
@@ -686,37 +782,55 @@ document.addEventListener('DOMContentLoaded', function() {
             num_inference_steps: parseInt(imageGenNumInferenceStepsInput.value),
             guidance_scale: parseFloat(imageGenGuidanceScaleInput.value),
             seed: imageGenSeedInput.value ? parseInt(imageGenSeedInput.value) : undefined,
-            image: imageGenSourceImageBase64 || undefined // 添加图生图的图片数据
+            image: imageGenSourceImageBase64 || undefined
         };
         
-        // 显示加载
-        imageGenerationLoading.style.display = 'block';
-        imageGenerationLoadingText.textContent = '正在生成图像...';
-        imageGenerationError.style.display = 'none';
-        imageResultsDiv.innerHTML = ''; // 清空之前的图片
-        
-        try {
-            // 调用代理 API
-            const response = await fetch('/api/siliconflow', { // 修改为代理端点
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json' // Authorization 头由 Worker 添加
-                },
-                body: JSON.stringify(params)
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `图像生成失败: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            // 显示结果
-            displayImageResults(data.data);
-        } catch (error) {
-            showError(imageGenerationError, error.message);
-        } finally {
-            imageGenerationLoading.style.display = 'none';
+        const response = await fetch('/api/siliconflow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `图像生成失败: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        displayImageResults(data.data);
+    }
+
+    async function generateWithGeminiVision(prompt) {
+        if (geminiSelectedFiles.length === 0) {
+            throw new Error('请为 Gemini Vision 模型上传至少一张图片');
+        }
+
+        const conversionPromises = geminiSelectedFiles.map(file => fileToBase64(file));
+        const base64Images = await Promise.all(conversionPromises);
+
+        const params = {
+            prompt: prompt,
+            images: base64Images
+        };
+
+        const response = await fetch('/api/openrouter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `图像生成失败: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Gemini Vision API in this setup returns a single base64 image string in data.data
+        if (data.data && typeof data.data === 'string' && data.data.startsWith('data:image/')) {
+             displayImageResults([{ url: data.data }]);
+        } else {
+            throw new Error('模型返回的不是有效的图片数据');
         }
     }
 

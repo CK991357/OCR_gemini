@@ -116,7 +116,7 @@
                     <!-- 新增图生图图片上传区域 -->
                     <div class="param-group">
                         <label for="imageGenFileInput">源图片 (可选，用于图生图):</label>
-                        <div class="upload-area small-upload-area" id="imageGenDropArea">
+                        <div class="upload-area small-upload-area" id="kolorsImageDropArea">
                             <i class="fas fa-cloud-upload-alt"></i>
                             <p>点击或拖放图片到此处上传</p>
                             <p><small>支持 JPG, PNG, WEBP 格式</small></p>
@@ -138,40 +138,67 @@
             
             <div class="panel">
                 <h2 class="panel-title"><i class="fas fa-cogs"></i> 生成参数</h2>
-                
+
                 <div class="param-group">
-                    <label for="image_size">图像尺寸:</label>
-                    <select id="imageGenImageSize"> <!-- 修改ID -->
-                        <option value="1024x1024">1024x1024 (方形)</option>
-                        <option value="960x1280">960x1280 (竖版)</option>
-                        <option value="768x1024">768x1024 (竖版)</option>
-                        <option value="720x1440">720x1440 (竖版)</option>
-                        <option value="720x1280">720x1280 (竖版)</option>
-                        <option value="others">自定义</option>
+                    <label for="imageGenModelSelect">选择模型:</label>
+                    <select id="imageGenModelSelect">
+                        <option value="kolors" selected>Kwai-Kolors/Kolors</option>
+                        <option value="gemini-vision">Google/Gemini Vision</option>
                     </select>
                 </div>
                 
-                <div class="param-group">
-                    <label for="batch_size">生成数量 (1-4):</label>
-                    <input type="range" id="imageGenBatchSize" min="1" max="4" value="1"> <!-- 修改ID -->
-                    <span id="imageGenBatchSizeValue">1</span> <!-- 修改ID -->
+                <!-- Kolors 模型参数 -->
+                <div id="kolorsParamsContainer">
+                    <div class="param-group">
+                        <label for="image_size">图像尺寸:</label>
+                        <select id="imageGenImageSize"> <!-- 修改ID -->
+                            <option value="1024x1024">1024x1024 (方形)</option>
+                            <option value="960x1280">960x1280 (竖版)</option>
+                            <option value="768x1024">768x1024 (竖版)</option>
+                            <option value="720x1440">720x1440 (竖版)</option>
+                            <option value="720x1280">720x1280 (竖版)</option>
+                            <option value="others">自定义</option>
+                        </select>
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="batch_size">生成数量 (1-4):</label>
+                        <input type="range" id="imageGenBatchSize" min="1" max="4" value="1"> <!-- 修改ID -->
+                        <span id="imageGenBatchSizeValue">1</span> <!-- 修改ID -->
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="num_inference_steps">推理步数 (1-100):</label>
+                        <input type="range" id="imageGenNumInferenceSteps" min="1" max="100" value="20"> <!-- 修改ID -->
+                        <span id="imageGenNumInferenceStepsValue">20</span> <!-- 修改ID -->
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="guidance_scale">引导系数 (0-20):</label>
+                        <input type="range" id="imageGenGuidanceScale" min="0" max="20" step="0.1" value="7.5"> <!-- 修改ID -->
+                        <span id="imageGenGuidanceScaleValue">7.5</span> <!-- 修改ID -->
+                    </div>
+                    
+                    <div class="param-group">
+                        <label for="seed">随机种子 (可选):</label>
+                        <input type="number" id="imageGenSeed" min="0" max="9999999999" placeholder="留空则随机"> <!-- 修改ID -->
+                    </div>
                 </div>
-                
-                <div class="param-group">
-                    <label for="num_inference_steps">推理步数 (1-100):</label>
-                    <input type="range" id="imageGenNumInferenceSteps" min="1" max="100" value="20"> <!-- 修改ID -->
-                    <span id="imageGenNumInferenceStepsValue">20</span> <!-- 修改ID -->
-                </div>
-                
-                <div class="param-group">
-                    <label for="guidance_scale">引导系数 (0-20):</label>
-                    <input type="range" id="imageGenGuidanceScale" min="0" max="20" step="0.1" value="7.5"> <!-- 修改ID -->
-                    <span id="imageGenGuidanceScaleValue">7.5</span> <!-- 修改ID -->
-                </div>
-                
-                <div class="param-group">
-                    <label for="seed">随机种子 (可选):</label>
-                    <input type="number" id="imageGenSeed" min="0" max="9999999999" placeholder="留空则随机"> <!-- 修改ID -->
+
+                <!-- Gemini Vision 模型参数 -->
+                <div id="geminiParamsContainer" style="display: none;">
+                    <div class="param-group">
+                        <label for="geminiImageUpload">上传图片 (最多3张):</label>
+                        <div class="upload-area gemini-upload-area" id="geminiImageDropArea">
+                             <input type="file" id="geminiImageUploadInput" accept="image/png, image/jpeg, image/webp" class="hidden-input" multiple>
+                            <label for="geminiImageUploadInput" class="upload-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>点击或拖拽图片到此处上传</p>
+                                <span>支持 PNG, JPG, WEBP 格式</span>
+                            </label>
+                        </div>
+                        <div id="geminiThumbnailsContainer" class="thumbnails-container"></div>
+                    </div>
                 </div>
                 
                 <button id="generateImageBtn" class="btn">
