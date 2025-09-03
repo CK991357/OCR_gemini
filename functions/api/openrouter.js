@@ -31,42 +31,43 @@ export async function onRequestPost(context) {
     // Select a random key from the array
     const apiKey = apiKeys[Math.floor(Math.random() * apiKeys.length)];
 
-    const { prompt, images } = await request.json();
+    const requestBody = await request.json(); // 获取整个请求体
+    const { contents } = requestBody;
 
-    if (!prompt || !images || !Array.isArray(images) || images.length === 0) {
-      return new Response(JSON.stringify({ error: "Prompt and an array of images are required." }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Validate that images are in base64 data URL format
-    if (images.some(img => typeof img !== 'string' || !img.startsWith('data:image/'))) {
-        return new Response(JSON.stringify({ error: "All images must be valid base64 data URLs." }), {
+    if (!contents || !contents.parts || !Array.isArray(contents.parts) || contents.parts.length === 0) {
+        return new Response(JSON.stringify({ error: "Request body must contain 'contents.parts' array." }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' }
         });
     }
 
-    // Construct the payload for the OpenRouter API, based on main.ts logic
-    const openrouterMessages = [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          ...images.map(img_url => ({
-            type: "image_url",
-            image_url: {
-              url: img_url
-            }
-          }))
-        ]
-      }
-    ];
+    // 检查是否存在至少一个文本部分
+    const hasTextPart = contents.parts.some(part => part.type === 'text' && part.text && part.text.trim() !== '');
+    if (!hasTextPart) {
+        return new Response(JSON.stringify({ error: "At least one non-empty text part is required in 'contents.parts'." }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
 
+    // 检查图片部分是否为有效的base64数据URL
+    const invalidImagePart = contents.parts.find(part =>
+        part.type === 'image_url' && (typeof part.image_url?.url !== 'string' || !part.image_url.url.startsWith('data:image/'))
+    );
+    if (invalidImagePart) {
+        return new Response(JSON.stringify({ error: "All image_url parts must contain valid base64 data URLs." }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+
+    // 直接使用前端传递的 contents.parts 结构
     const openrouterPayload = {
       model: "google/gemini-2.5-flash-image-preview:free",
-      messages: openrouterMessages,
+      messages: [{
+        role: "user",
+        content: contents.parts
+      }],
       // Optional: Add other parameters like max_tokens if needed
       // max_tokens: 1024,
     };
