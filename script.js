@@ -756,7 +756,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 num_inference_steps: parseInt(imageGenNumInferenceStepsInput.value),
                 guidance_scale: parseFloat(imageGenGuidanceScaleInput.value),
                 seed: imageGenSeedInput.value ? parseInt(imageGenSeedInput.value) : undefined,
-                image: imageGenSourceImageBase64 || undefined
+                image: imageGenSourceImageBase64Array.length > 0 ? imageGenSourceImageBase64Array[0] : undefined
             };
         } else if (selectedModel === "google/gemini-2.5-flash-image-preview:free") {
             apiUrl = '/api/openrouter'; // 新的OpenRouter代理端点
@@ -771,10 +771,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 ]
             };
-            if (imageGenSourceImageBase64) {
-                requestBody.messages[0].content.push({
-                    type: "image_url",
-                    image_url: { url: imageGenSourceImageBase64 }
+            // Gemini模型支持多图输入，最多 MAX_GEMINI_IMAGES 张
+            if (imageGenSourceImageBase64Array.length > 0) {
+                const imagesToProcess = imageGenSourceImageBase64Array.slice(0, MAX_GEMINI_IMAGES);
+                imagesToProcess.forEach(base64Image => {
+                    requestBody.messages[0].content.push({
+                        type: "image_url",
+                        image_url: { url: base64Image }
+                    });
                 });
             }
         } else {
