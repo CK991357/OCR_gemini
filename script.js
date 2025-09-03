@@ -805,16 +805,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function generateWithGeminiVision(prompt) {
-        if (geminiSelectedFiles.length === 0) {
-            throw new Error('请为 Gemini Vision 模型上传至少一张图片');
+        let contentsParts = [];
+
+        // 添加文本部分
+        contentsParts.push({
+            type: "text",
+            text: prompt
+        });
+
+        // 如果存在图片，则添加图片部分
+        if (geminiSelectedFiles.length > 0) {
+            const conversionPromises = geminiSelectedFiles.map(file => fileToBase64(file));
+            const base64Images = await Promise.all(conversionPromises);
+            base64Images.forEach(base64Data => {
+                contentsParts.push({
+                    type: "image_url",
+                    image_url: {
+                        url: base64Data
+                    }
+                });
+            });
         }
 
-        const conversionPromises = geminiSelectedFiles.map(file => fileToBase64(file));
-        const base64Images = await Promise.all(conversionPromises);
-
         const params = {
-            prompt: prompt,
-            images: base64Images
+            contents: {
+                parts: contentsParts
+            }
         };
 
         const response = await fetch('/api/openrouter', {
