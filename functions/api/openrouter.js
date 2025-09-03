@@ -9,14 +9,27 @@
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
-    const apiKey = env.OPENROUTER_API_KEY;
+    const apiKeysString = env.OPENROUTER_API_KEY;
 
-    if (!apiKey) {
+    if (!apiKeysString) {
       return new Response(JSON.stringify({ error: "OPENROUTER_API_KEY not configured in environment variables" }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    // Split the string into an array of keys, filter out any empty strings, and trim whitespace
+    const apiKeys = apiKeysString.split(',').map(key => key.trim()).filter(key => key);
+    
+    if (apiKeys.length === 0) {
+        return new Response(JSON.stringify({ error: "OPENROUTER_API_KEY is configured but contains no valid keys." }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+
+    // Select a random key from the array
+    const apiKey = apiKeys[Math.floor(Math.random() * apiKeys.length)];
 
     const { prompt, images } = await request.json();
 
