@@ -24,16 +24,33 @@ export default {
             });
 
             if (!openrouterResponse.ok) {
-                const errorText = await openrouterResponse.text();
-                return new Response(JSON.stringify({ error: `OpenRouter API error: ${openrouterResponse.status} - ${errorText}` }), {
+                const errorData = await openrouterResponse.text(); // 尝试获取原始错误文本
+                // 尝试解析为JSON，如果失败则直接返回文本
+                let errorMessage = errorData;
+                try {
+                    const parsedError = JSON.parse(errorData);
+                    errorMessage = parsedError.error || JSON.stringify(parsedError);
+                } catch (jsonError) {
+                    // 如果不是有效的JSON，则保持为原始文本
+                }
+                return new Response(JSON.stringify({ error: `OpenRouter API error: ${openrouterResponse.status} - ${errorMessage}` }), {
                     status: openrouterResponse.status,
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
 
-            const responseData = await openrouterResponse.json();
+            let responseData;
+            const contentType = openrouterResponse.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                responseData = await openrouterResponse.json();
+            } else {
+                responseData = await openrouterResponse.text(); // 如果不是JSON，则作为文本处理
+                // 如果是文本，可以将其包装成一个JSON对象，以便前端统一处理
+                responseData = { content: responseData };
+            }
+            
             return new Response(JSON.stringify(responseData), {
-                status: 200,
+                status: openrouterResponse.status, // 使用OpenRouter的原始状态码
                 headers: { 'Content-Type': 'application/json' }
             });
 
