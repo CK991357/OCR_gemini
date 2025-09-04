@@ -92,7 +92,8 @@ export function loadImage(imageUrl) {
 
         imageNode = new Konva.Image({
             image: imageObj,
-            draggable: true, // Allow panning
+            draggable: false, // Prevent panning the image itself
+            listening: false, // Pass events through to the stage for drawing
         });
 
         imageLayer.add(imageNode);
