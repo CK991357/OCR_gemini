@@ -1,15 +1,24 @@
 // api.js: Handles communication with the backend image editing API.
 
 /**
- * Sends the image, mask, and prompt to the backend for processing.
- * @param {string} imageDataUrl - The base64 data URL of the original image.
- * @param {string} maskDataUrl - The base64 data URL of the user-drawn mask.
+ * Dynamically sends a prompt and optional images to the backend.
+ * Supports text-only, text+image, and text+image+mask combinations.
  * @param {string} prompt - The user's text instruction for the edit.
+ * @param {string|null} [imageDataUrl=null] - The base64 data URL of the original image.
+ * @param {string|null} [maskDataUrl=null] - The base64 data URL of the user-drawn mask.
  * @returns {Promise<object>} A promise that resolves with the server's response.
  */
-export async function sendEditRequest(imageDataUrl, maskDataUrl, prompt) {
-    // This is a placeholder for the actual backend endpoint.
-    const apiEndpoint = '/api/image-edit'; 
+export async function sendEditRequest(prompt, imageDataUrl = null, maskDataUrl = null) {
+    const apiEndpoint = '/api/image-edit';
+
+    const parts = [{ type: 'text', text: prompt }];
+
+    if (imageDataUrl) {
+        parts.push({ type: 'image_url', image_url: { url: imageDataUrl } });
+    }
+    if (maskDataUrl) {
+        parts.push({ type: 'image_url', image_url: { url: maskDataUrl } });
+    }
 
     try {
         const response = await fetch(apiEndpoint, {
@@ -18,9 +27,9 @@ export async function sendEditRequest(imageDataUrl, maskDataUrl, prompt) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                image: imageDataUrl,
-                mask: maskDataUrl,
-                prompt: prompt,
+                contents: {
+                    parts: parts
+                }
             }),
         });
 

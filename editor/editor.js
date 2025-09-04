@@ -175,12 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // console.log('Image Data URL Length:', imageDataUrl.length);
             // console.log('Mask Data URL Length:', maskDataUrl.length);
 
-            const result = await sendEditRequest(imageDataUrl, maskDataUrl, prompt);
+            const result = await sendEditRequest(prompt, imageDataUrl, maskDataUrl);
 
-            if (result && result.newImageUrl) {
+            if (result && result.data) {
                 console.log('Received new image from backend.');
                 // The backend sends a new image URL, which we load onto the canvas
-                await loadImage(result.newImageUrl);
+                await loadImage(result.data);
                 // We should also clear the old mask
                 clearMaskLayer(); // Only clear the mask, not the new image
             } else {
