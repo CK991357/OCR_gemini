@@ -75,7 +75,13 @@ export async function onRequestPost(context) {
     const message = data.choices?.[0]?.message;
     let imageUrl = null;
 
-    if (typeof message?.content === 'string' && message.content.startsWith('data:image/')) {
+    // Aligned with openrouter.js: Check for image in two possible locations
+    // Case 1: Image is in message.images array
+    if (message?.images?.[0]?.image_url?.url) {
+        imageUrl = message.images[0].image_url.url;
+    }
+    // Case 2: Image is a base64 data URL directly in message.content
+    else if (typeof message?.content === 'string' && message.content.startsWith('data:image/')) {
         imageUrl = message.content;
     }
 
