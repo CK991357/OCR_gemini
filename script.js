@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const imageGenerationPanel = document.getElementById('imageGenerationPanel'); // 图像生成面板
     const ocrFunctionBtn = document.getElementById('ocrFunction'); // OCR功能切换按钮
     const imageGenerationFunctionBtn = document.getElementById('imageGenerationFunction'); // 图像生成功能切换按钮
+    
+    // AI智能编辑功能相关元素
+    const imageEditPanel = document.getElementById('imageEditPanel'); // AI智能编辑面板
+    const imageEditFunctionBtn = document.getElementById('imageEditFunction'); // AI智能编辑功能切换按钮
     const imageGenPromptInput = document.getElementById('imageGenPrompt');
     const imageGenNegativePromptInput = document.getElementById('imageGenNegativePrompt');
     const imageGenImageSizeSelect = document.getElementById('imageGenImageSize');
@@ -67,29 +71,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化功能面板显示
     ocrPanel.style.display = 'grid';
     imageGenerationPanel.style.display = 'none';
+    imageEditPanel.style.display = 'none'; // 新增
     updateOcrButtonState(); // 更新OCR分析按钮状态
     // updateImageGenButtonState(); // 更新图像生成按钮状态 - 移除，因为不再需要API Key检查
 
     // 功能切换事件监听
     ocrFunctionBtn.addEventListener('click', () => {
-        ocrFunctionBtn.classList.add('active');
-        imageGenerationFunctionBtn.classList.remove('active');
-        ocrPanel.style.display = 'grid';
-        imageGenerationPanel.style.display = 'none';
-        currentFunction = 'ocr';
-        updateOcrButtonState(); // 切换到OCR时更新OCR分析按钮状态
-        // updateImageGenButtonState(); // 确保图像生成按钮在切换时也更新状态 - 移除，因为不再需要API Key检查
+        switchFunction('ocr');
     });
 
     imageGenerationFunctionBtn.addEventListener('click', () => {
-        imageGenerationFunctionBtn.classList.add('active');
-        ocrFunctionBtn.classList.remove('active');
-        ocrPanel.style.display = 'none';
-        imageGenerationPanel.style.display = 'block';
-        currentFunction = 'imageGen';
-        updateOcrButtonState(); // 确保OCR分析按钮在切换时也更新状态
-        // updateImageGenButtonState(); // 切换到图像生成时更新按钮状态 - 移除，因为不再需要API Key检查
+        switchFunction('imageGen');
     });
+
+    imageEditFunctionBtn.addEventListener('click', () => {
+        switchFunction('imageEdit');
+    });
+
+    function switchFunction(functionName) {
+        currentFunction = functionName;
+
+        // 更新按钮状态
+        ocrFunctionBtn.classList.toggle('active', functionName === 'ocr');
+        imageGenerationFunctionBtn.classList.toggle('active', functionName === 'imageGen');
+        imageEditFunctionBtn.classList.toggle('active', functionName === 'imageEdit');
+
+        // 更新面板可见性
+        ocrPanel.style.display = functionName === 'ocr' ? 'grid' : 'none';
+        imageGenerationPanel.style.display = functionName === 'imageGen' ? 'grid' : 'none';
+        imageEditPanel.style.display = functionName === 'imageEdit' ? 'grid' : 'none';
+
+        // 更新相关按钮状态
+        updateOcrButtonState();
+        // updateImageGenButtonState(); // 如果有的话
+    }
 
     // 模型选择器事件监听
     imageGenModelSelect.addEventListener('change', () => {
