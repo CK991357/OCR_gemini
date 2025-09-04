@@ -10,6 +10,8 @@ import {
     setTool
 } from './canvas.js';
 
+let isEditorCanvasInitialized = false; // 新增标志位
+
 /**
  * Initializes the editor module when the DOM is fully loaded.
  */
@@ -32,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /**
      * Main initialization function.
+     * 负责设置事件监听器和初始UI状态，但不初始化画布。
      */
     function init() {
-        console.log("Initializing AI Image Editor...");
-        initCanvas('canvasContainer');
+        console.log("Initializing AI Image Editor UI..."); // 修改日志
         setupEventListeners();
         updateApplyButtonState();
         setToolbarDisabled(true);
@@ -232,3 +234,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Start the editor ---
     init();
 });
+
+/**
+ * 初始化编辑器画布。
+ * 确保在画布容器可见且具有正确尺寸后调用。
+ * @returns {void}
+ */
+export function initializeEditorCanvas() {
+    if (!isEditorCanvasInitialized) {
+        console.log("Initializing Konva.js Canvas...");
+        initCanvas('canvasContainer');
+        isEditorCanvasInitialized = true;
+    }
+}

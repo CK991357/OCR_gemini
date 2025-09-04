@@ -13,6 +13,10 @@ This repository contains a client-side web application that provides OCR (Optica
     *   Processing image and PDF files for submission to backend services.
     *   Interacting with proxy API endpoints (`/api/gemini` and `/api/siliconflow`) for model inference.
     *   Displaying results to the user.
+*   **`editor/`**: A self-contained module for the "AI Smart Editing" feature.
+    *   `editor.js`: The main controller for the editing functionality.
+    *   `canvas.js`: Manages all `Konva.js` canvas interactions, including drawing, zooming, and exporting.
+    *   `api.js`: Handles API requests for the image editing backend.
 *   **`functions/`**: This directory contains backend proxy functions (e.g., serverless functions) that handle API requests from the frontend, manage API keys, and communicate with external AI services. For instance, `functions/api/openrouter.js` proxies requests to the OpenRouter API for the Gemini Vision model. Other files in this directory likely communicate with Gemini and Kolors/Siliconflow for image generation.
 *   **`backup/`**: Contains backup files.
 
@@ -22,6 +26,7 @@ This repository contains a client-side web application that provides OCR (Optica
 2.  **Image Content Description**: Analyzes uploaded images to provide detailed descriptions and generates Comfy UI prompt templates (English and Chinese).
 3.  **Image Generation**: Generates images based on text prompts and various parameters (image size, batch size, inference steps, guidance scale, seed). Supports image-to-image generation. This feature uses the Kolors/Siliconflow model.
 4.  **Prompt Expansion**: Leverages the Gemini model to expand concise image generation prompts into more detailed descriptions.
+5.  **AI Smart Editing**: Allows users to upload an image, draw a mask over a specific area, and provide a text prompt to modify only that area. This feature uses the `Konva.js` library for its interactive canvas and sends the image, mask, and prompt to a dedicated backend endpoint for processing.
 
 ## Development Commands
 

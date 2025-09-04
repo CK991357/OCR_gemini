@@ -1,4 +1,6 @@
 // 设置PDF.js worker路径
+import { initializeEditorCanvas } from './editor/editor.js'; // 导入AI智能编辑画布初始化函数
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -100,6 +102,11 @@ document.addEventListener('DOMContentLoaded', function() {
         ocrPanel.style.display = functionName === 'ocr' ? 'grid' : 'none';
         imageGenerationPanel.style.display = functionName === 'imageGen' ? 'grid' : 'none';
         imageEditPanel.style.display = functionName === 'imageEdit' ? 'grid' : 'none';
+
+        // 如果切换到AI智能编辑功能，则初始化画布
+        if (functionName === 'imageEdit' && imageEditPanel.style.display === 'grid') {
+            initializeEditorCanvas();
+        }
 
         // 更新相关按钮状态
         updateOcrButtonState();
