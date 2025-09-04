@@ -254,3 +254,34 @@ export async function exportLayersAsDataURL() {
         mask: maskDataURL,
     };
 }
+
+/**
+ * Exports only the image layer as a Base64 data URL.
+ * This is useful for saving the final image without the mask.
+ * @returns {Promise<string>} A promise that resolves with the image data URL.
+ */
+export async function exportImageLayerAsDataURL() {
+    if (!imageNode) {
+        throw new Error("Cannot export: No image loaded.");
+    }
+
+    // --- Save and Reset Stage Transformations ---
+    const oldScale = stage.scaleX();
+    const oldPos = stage.position();
+    
+    stage.scale({ x: 1, y: 1 });
+    stage.position({ x: 0, y: 0 });
+    stage.batchDraw();
+
+    // --- Export Image Layer ---
+    maskLayer.hide(); // Hide mask to ensure a clean export
+    const imageDataURL = imageLayer.toDataURL({ pixelRatio: 2 }); // Export at higher res
+    maskLayer.show();
+    
+    // --- Restore Stage Transformations ---
+    stage.scale({ x: oldScale, y: oldScale });
+    stage.position(oldPos);
+    stage.batchDraw();
+
+    return imageDataURL;
+}

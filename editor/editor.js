@@ -3,6 +3,7 @@ import { sendEditRequest } from './api.js';
 import {
     clearCanvas as clearCanvasArtboard,
     clearMaskLayer,
+    exportImageLayerAsDataURL,
     exportLayersAsDataURL,
     initCanvas,
     loadImage,
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brushSizeValue = document.getElementById('brushSizeValue');
     const clearCanvasBtn = document.getElementById('resetCanvasBtn');
     const editPromptInput = document.getElementById('editPrompt');
+    const saveEditBtn = document.getElementById('saveEditBtn'); // Save button
     
     let selectedFile = null;
 
@@ -94,13 +96,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         clearCanvasBtn.addEventListener('click', () => {
-             // This clears the entire artboard including image and mask
-             clearCanvasArtboard();
+             // This only clears the mask layer, preserving the original image
+             clearMaskLayer();
         });
 
         // --- Apply Edit Button ---
         applyEditBtn.addEventListener('click', handleApplyEdit);
         editPromptInput.addEventListener('input', updateApplyButtonState);
+
+       // --- Save Image Button Listener ---
+       saveEditBtn.addEventListener('click', async () => {
+           try {
+               const imageDataURL = await exportImageLayerAsDataURL();
+               const link = document.createElement('a');
+               link.href = imageDataURL;
+               link.download = `edited-image-${Date.now()}.png`;
+               document.body.appendChild(link);
+               link.click();
+               document.body.removeChild(link);
+           } catch (error) {
+               console.error('Failed to export and save image:', error);
+               alert(`保存图片失败: ${error.message}`);
+           }
+       });
     }
 
     /**
@@ -143,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateApplyButtonState();
         setToolbarDisabled(true);
+        saveEditBtn.style.display = 'none'; // Hide save button when clearing
     }
 
     /**
@@ -183,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadImage(result.data);
                 // We should also clear the old mask
                 clearMaskLayer(); // Only clear the mask, not the new image
+                saveEditBtn.style.display = 'block'; // Show the save button
             } else {
                 throw new Error('Backend did not return a new image.');
             }
