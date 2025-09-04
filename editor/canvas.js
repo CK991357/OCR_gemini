@@ -20,6 +20,11 @@ export function initCanvas(containerId) {
         return;
     }
 
+   // Prevent scrolling on mobile when drawing on canvas
+   container.addEventListener('touchmove', (e) => {
+       e.preventDefault();
+   }, { passive: false });
+
     stage = new Konva.Stage({
         container: containerId,
         width: container.offsetWidth,
@@ -46,7 +51,7 @@ export function initCanvas(containerId) {
  * Sets up mouse event listeners for drawing on the mask layer.
  */
 function setupDrawingEventListeners() {
-    stage.on('mousedown.drawing', (e) => {
+    stage.on('mousedown.drawing touchstart.drawing', (e) => {
         if (!imageNode) return; // Don't draw if no image is loaded
         isDrawing = true;
         const pos = stage.getRelativePointerPosition();
@@ -63,7 +68,7 @@ function setupDrawingEventListeners() {
         maskLayer.add(lastLine);
     });
 
-    stage.on('mousemove.drawing', (e) => {
+    stage.on('mousemove.drawing touchmove.drawing', (e) => {
         if (!isDrawing) {
             return;
         }
@@ -275,7 +280,7 @@ export async function exportImageLayerAsDataURL() {
 
     // --- Export Image Layer ---
     maskLayer.hide(); // Hide mask to ensure a clean export
-    const imageDataURL = imageLayer.toDataURL({ pixelRatio: 2 }); // Export at higher res
+    const imageDataURL = imageNode.toDataURL({ pixelRatio: 2 }); // Export at higher res
     maskLayer.show();
     
     // --- Restore Stage Transformations ---
