@@ -157,25 +157,25 @@ document.addEventListener('DOMContentLoaded', () => {
      * Handles the main edit action when the "Apply Edit" button is clicked.
      */
     async function handleApplyEdit() {
-        const prompt = editPromptInput.value.trim();
-        if (!prompt) {
+        const userPrompt = editPromptInput.value.trim();
+        if (!userPrompt) {
             alert('请输入您的编辑指令。');
             return;
         }
 
-        console.log('Applying edit with prompt:', prompt);
-        // TODO: Add a visual loading indicator
+        // This is the "magic instruction" that teaches the model how to use the mask.
+        const magicInstruction = "\n\nIMPORTANT: Apply changes ONLY where the mask image shows white pixels (value 255). Leave all other areas completely unchanged. Respect the mask boundaries precisely and maintain seamless blending at the edges.";
+        const finalPrompt = userPrompt + magicInstruction;
+        
+        console.log('Applying edit with composite prompt:', finalPrompt);
+        
         applyEditBtn.disabled = true;
         applyEditBtn.textContent = '正在处理...';
 
         try {
             const { image: imageDataUrl, mask: maskDataUrl } = await exportLayersAsDataURL();
             
-            // For debugging: log the data URLs. In a real app, you might want to remove this.
-            // console.log('Image Data URL Length:', imageDataUrl.length);
-            // console.log('Mask Data URL Length:', maskDataUrl.length);
-
-            const result = await sendEditRequest(prompt, imageDataUrl, maskDataUrl);
+            const result = await sendEditRequest(finalPrompt, imageDataUrl, maskDataUrl);
 
             if (result && result.data) {
                 console.log('Received new image from backend.');

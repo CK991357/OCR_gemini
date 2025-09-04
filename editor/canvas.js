@@ -52,7 +52,7 @@ function setupDrawingEventListeners() {
         const pos = stage.getRelativePointerPosition();
         
         lastLine = new Konva.Line({
-            stroke: '#ff0000', // Red color for the mask
+            stroke: '#ffffff', // White color for the mask, as required by the prompt
             strokeWidth: brushSize,
             globalCompositeOperation:
                 currentTool === 'brush' ? 'source-over' : 'destination-out',
@@ -221,10 +221,22 @@ export async function exportLayersAsDataURL() {
     maskLayer.show();
     const originalOpacity = maskLayer.opacity();
     maskLayer.opacity(1);
-    maskLayer.draw();
+    // Add a black background for the mask export
+    const bg = new Konva.Rect({
+        width: stage.width(),
+        height: stage.height(),
+        fill: 'black',
+    });
+    maskLayer.add(bg);
+    bg.zIndex(0); // Ensure it's at the bottom
+    maskLayer.batchDraw();
+
     const maskDataURL = maskLayer.toDataURL();
+
+    // Clean up the temporary background
+    bg.destroy();
     maskLayer.opacity(originalOpacity);
-    maskLayer.draw();
+    maskLayer.batchDraw();
 
     // --- Export Image ---
     maskLayer.hide();
