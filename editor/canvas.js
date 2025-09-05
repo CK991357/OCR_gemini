@@ -8,6 +8,9 @@ let currentTool = 'brush'; // 'brush' or 'eraser'
 let brushSize = 30;
 let isDrawing = false;
 let lastLine;
+let lastDist = 0; // 用于双指缩放，记录上次两指距离
+let lastCenter = null; // 用于双指缩放，记录上次两指中心点
+let isTwoFinger = false; // 标记是否为双指手势
 
 /**
  * Initializes the Konva stage and main image layer.
@@ -21,9 +24,10 @@ export function initCanvas(containerId) {
     }
 
    // Prevent scrolling on mobile when drawing on canvas
-   container.addEventListener('touchmove', (e) => {
-       e.preventDefault();
-   }, { passive: false });
+   // 这里的 preventDefault 可能会与双指缩放冲突，需要更精细的控制
+   // container.addEventListener('touchmove', (e) => {
+   //     e.preventDefault();
+   // }, { passive: false });
 
     stage = new Konva.Stage({
         container: containerId,
@@ -51,8 +55,8 @@ export function initCanvas(containerId) {
  * Sets up mouse event listeners for drawing on the mask layer.
  */
 function setupDrawingEventListeners() {
-    stage.on('mousedown.drawing touchstart.drawing', (e) => {
-        if (!imageNode) return; // Don't draw if no image is loaded
+    stage.on('mousedown.drawing', (e) => {
+        if (!imageNode || isTwoFinger) return; // 不在双指手势时才绘图
         isDrawing = true;
         const pos = stage.getRelativePointerPosition();
         
@@ -68,8 +72,8 @@ function setupDrawingEventListeners() {
         maskLayer.add(lastLine);
     });
 
-    stage.on('mousemove.drawing touchmove.drawing', (e) => {
-        if (!isDrawing) {
+    stage.on('mousemove.drawing', (e) => {
+        if (!isDrawing || isTwoFinger) {
             return;
         }
         const pos = stage.getRelativePointerPosition();
@@ -78,9 +82,101 @@ function setupDrawingEventListeners() {
         maskLayer.batchDraw();
     });
 
-    stage.on('mouseup.drawing touchend.drawing', () => {
+    stage.on('mouseup.drawing', () => {
         isDrawing = false;
     });
+
+    // Touch event listeners for drawing and pinch-to-zoom
+    stage.on('touchstart.drawing', (e) => {
+        const touches = e.evt.touches;
+        if (touches.length === 2) {
+            isTwoFinger = true;
+            lastDist = getDistance(touches[0], touches[1]);
+            lastCenter = getCenter(touches[0], touches[1]);
+            e.evt.preventDefault(); // 阻止默认的滚动行为
+        } else if (touches.length === 1 && !isTwoFinger && imageNode) {
+            isDrawing = true;
+            const pos = stage.getRelativePointerPosition();
+            lastLine = new Konva.Line({
+                stroke: '#ffffff',
+                strokeWidth: brushSize,
+                globalCompositeOperation:
+                    currentTool === 'brush' ? 'source-over' : 'destination-out',
+                lineCap: 'round',
+                lineJoin: 'round',
+                points: [pos.x, pos.y, pos.x, pos.y],
+            });
+            maskLayer.add(lastLine);
+            e.evt.preventDefault(); // 阻止默认的滚动行为
+        }
+    });
+
+    stage.on('touchmove.drawing', (e) => {
+        const touches = e.evt.touches;
+        if (isTwoFinger && touches.length === 2) {
+            const currentDist = getDistance(touches[0], touches[1]);
+            const currentCenter = getCenter(touches[0], touches[1]);
+
+            const scale = currentDist / lastDist;
+            const oldScale = stage.scaleX();
+            const newScale = oldScale * scale;
+
+            const dx = currentCenter.x - lastCenter.x;
+            const dy = currentCenter.y - lastCenter.y;
+
+            const stageX = stage.x();
+            const stageY = stage.y();
+
+            stage.scale({ x: newScale, y: newScale });
+            stage.position({
+                x: currentCenter.x - ((currentCenter.x - stageX) / oldScale) * newScale,
+                y: currentCenter.y - ((currentCenter.y - stageY) / oldScale) * newScale,
+            });
+
+            lastDist = currentDist;
+            lastCenter = currentCenter;
+            stage.batchDraw();
+            e.evt.preventDefault(); // 阻止默认的滚动行为
+        } else if (isDrawing && touches.length === 1 && !isTwoFinger) {
+            const pos = stage.getRelativePointerPosition();
+            let newPoints = lastLine.points().concat([pos.x, pos.y]);
+            lastLine.points(newPoints);
+            maskLayer.batchDraw();
+            e.evt.preventDefault(); // 阻止默认的滚动行为
+        }
+    });
+
+    stage.on('touchend.drawing', (e) => {
+        isDrawing = false;
+        isTwoFinger = false;
+        lastDist = 0;
+        lastCenter = null;
+    });
+}
+
+/**
+ * Calculates the distance between two touch points.
+ * @param {Touch} touch1 - The first touch object.
+ * @param {Touch} touch2 - The second touch object.
+ * @returns {number} The distance between the two touch points.
+ */
+function getDistance(touch1, touch2) {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Calculates the center point between two touch points.
+ * @param {Touch} touch1 - The first touch object.
+ * @param {Touch} touch2 - The second touch object.
+ * @returns {{x: number, y: number}} The center point coordinates.
+ */
+function getCenter(touch1, touch2) {
+    return {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2,
+    };
 }
 
 /**
