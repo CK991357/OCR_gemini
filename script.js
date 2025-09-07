@@ -866,8 +866,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `图像生成失败: ${response.status} ${response.statusText}`);
+            const errorText = await response.text();
+            let errorMessage = `图像生成失败: ${response.status} ${response.statusText}`;
+            try {
+                // 尝试解析为JSON，如果成功，则使用更具体的错误信息
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.error || errorText;
+            } catch (e) {
+                // 如果解析失败，直接使用Worker返回的文本
+                errorMessage = errorText;
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();
