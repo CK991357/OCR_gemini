@@ -800,7 +800,6 @@ footer {
     border-radius: 8px;
     position: relative;
     overflow: hidden;
-    touch-action: none; /* 禁用所有默认触摸行为 */
 }
 
 /* Ensure the panel containing the canvas stretches */

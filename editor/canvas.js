@@ -25,9 +25,12 @@ export function initCanvas(containerId) {
 
    // Prevent scrolling on mobile when drawing on canvas
    // 这里的 preventDefault 可能会与双指缩放冲突，需要更精细的控制
-   // container.addEventListener('touchmove', (e) => {
-   //     e.preventDefault();
-   // }, { passive: false });
+   container.addEventListener('touchmove', (e) => {
+       // Only prevent default if the target is the canvas itself, not other UI elements
+       if (e.target.tagName === 'CANVAS') {
+           e.preventDefault();
+       }
+   }, { passive: false });
 
     stage = new Konva.Stage({
         container: containerId,
