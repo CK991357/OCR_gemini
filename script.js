@@ -128,6 +128,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('.param-group label[for="imageGenFileInput"]').parentElement.style.display = 'none';
         }
     });
+    
+    // 页面加载时，手动触发一次模型选择器的change事件，以确保UI与默认模型同步
+    imageGenModelSelect.dispatchEvent(new Event('change'));
 
     // OCR模式切换 (保留原有逻辑)
     let currentMode = 'ocr'; // 默认模式为OCR
