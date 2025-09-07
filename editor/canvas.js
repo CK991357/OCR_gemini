@@ -379,7 +379,15 @@ export async function exportImageLayerAsDataURL() {
 
     // --- Export Image Layer ---
     maskLayer.hide(); // Hide mask to ensure a clean export
-    const imageDataURL = imageNode.toDataURL({ pixelRatio: 2 }); // Export at higher res
+    // By exporting the layer and providing a clip region, we ensure that only the
+    // image is captured, without any extra space from the stage background.
+    const imageDataURL = imageLayer.toDataURL({
+        x: imageNode.x(),
+        y: imageNode.y(),
+        width: imageNode.width() * imageNode.scaleX(),
+        height: imageNode.height() * imageNode.scaleY(),
+        pixelRatio: 2 // Export at higher resolution
+    });
     maskLayer.show();
     
     // --- Restore Stage Transformations ---
