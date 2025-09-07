@@ -850,9 +850,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const params = {
-            contents: {
-                parts: contentsParts
-            }
+            model: "gemini-2.5-flash-image-preview",
+            messages: [
+                {
+                    role: "user",
+                    content: contentsParts
+                }
+            ]
         };
 
         const response = await fetch('/api/gemini', {
