@@ -335,7 +335,14 @@ export async function exportLayersAsDataURL() {
     bg.zIndex(0); // Ensure it's at the bottom
     maskLayer.batchDraw();
 
-    const maskDataURL = maskLayer.toDataURL();
+    const clipRegion = {
+        x: imageNode.x(),
+        y: imageNode.y(),
+        width: imageNode.width() * imageNode.scaleX(),
+        height: imageNode.height() * imageNode.scaleY(),
+    };
+
+    const maskDataURL = maskLayer.toDataURL(clipRegion);
 
     // Clean up the temporary background
     bg.destroy();
@@ -345,7 +352,7 @@ export async function exportLayersAsDataURL() {
     // --- Export Image ---
     maskLayer.hide();
     imageLayer.draw(); // Ensure image is visible
-    const imageDataURL = imageLayer.toDataURL();
+    const imageDataURL = imageLayer.toDataURL(clipRegion);
     maskLayer.show();
     
     // --- Restore Stage Transformations ---
