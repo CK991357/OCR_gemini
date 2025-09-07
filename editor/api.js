@@ -9,7 +9,7 @@
  * @returns {Promise<object>} A promise that resolves with the server's response.
  */
 export async function sendEditRequest(prompt, imageDataUrl, maskDataUrl) {
-    const apiEndpoint = '/api/image-edit';
+    const apiEndpoint = '/api/gemini'; // 修正：指向统一的Gemini代理
 
     const parts = [
         { type: 'text', text: prompt },
@@ -17,17 +17,24 @@ export async function sendEditRequest(prompt, imageDataUrl, maskDataUrl) {
         { type: 'image_url', image_url: { url: maskDataUrl } }
     ];
 
+    // 为Gemini Worker构建正确的请求体
+    const requestBody = {
+        model: "gemini-2.5-flash-image-preview",
+        messages: [
+            {
+                role: "user",
+                content: parts
+            }
+        ]
+    };
+
     try {
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                contents: {
-                    parts: parts
-                }
-            }),
+            body: JSON.stringify(requestBody), // 使用为Gemini构建的新请求体
         });
 
         if (!response.ok) {
