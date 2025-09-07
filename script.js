@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
             geminiParamsContainer.style.display = 'none';
             // 切换时显示Kolors的图生图上传区域
             document.querySelector('.param-group label[for="imageGenFileInput"]').parentElement.style.display = 'block';
-        } else if (selectedModel === 'gemini-2.0-flash-exp-image-generation') {
+        } else if (selectedModel === 'gemini-2.5-flash-image-preview') {
             kolorsParamsContainer.style.display = 'none';
             geminiParamsContainer.style.display = 'block';
             // 切换到Gemini时隐藏Kolors的图生图上传区域
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             if (selectedModel === 'kolors') {
                 await generateWithKolors(prompt);
-            } else if (selectedModel === 'gemini-2.0-flash-exp-image-generation') {
+            } else if (selectedModel === 'gemini-2.5-flash-image-preview') {
                 await generateWithGeminiImage(prompt);
             }
         } catch (error) {
@@ -850,7 +850,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const params = {
-            model: "gemini-2.0-flash-exp-image-generation",
+            model: "gemini-2.5-flash-image-preview",
             messages: [
                 {
                     role: "user",
