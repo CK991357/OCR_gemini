@@ -17,16 +17,16 @@ This repository contains a client-side web application that provides OCR (Optica
     *   `editor.js`: The main controller for the editing functionality.
     *   `canvas.js`: Manages all `Konva.js` canvas interactions, including drawing, zooming, and exporting.
     *   `api.js`: Handles API requests for the image editing backend.
-*   **`functions/`**: This directory contains backend proxy functions (e.g., serverless functions) that handle API requests from the frontend, manage API keys, and communicate with external AI services. For instance, `functions/api/openrouter.js` proxies requests to the OpenRouter API for the Gemini Vision model. Other files in this directory likely communicate with Gemini and Kolors/Siliconflow for image generation.
+*   **`functions/`**: This directory contains backend proxy functions. The primary proxy, `functions/api/gemini.js`, now serves as a unified endpoint for all Google Gemini API calls. It forwards requests to a self-hosted Cloudflare Worker (`backup/apim/worker.mjs`), which manages the actual communication with the Google API, providing a centralized and secure way to handle API keys and requests. The previous proxy for OpenRouter (`openrouter.js`) has been deprecated and removed.
 *   **`backup/`**: Contains backup files.
 
 ## Core Functionalities
 
-1.  **OCR Text Recognition**: Extracts text content from uploaded images (JPG, PNG, WEBP) and PDF files. This functionality leverages the Gemini Vision model, often proxied via services like OpenRouter (e.g., `google/gemini-2.5-flasha_image-preview:free`).
+1.  **OCR Text Recognition**: Extracts text content from uploaded images and PDFs. This functionality now uses the `gemini-2.5-flash-image-preview` model, proxied through a self-hosted Cloudflare Worker for improved stability and control.
 2.  **Image Content Description**: Analyzes uploaded images to provide detailed descriptions and generates Comfy UI prompt templates (English and Chinese).
 3.  **Image Generation**: Generates images based on text prompts and various parameters (image size, batch size, inference steps, guidance scale, seed). Supports image-to-image generation. This feature uses the Kolors/Siliconflow model.
 4.  **Prompt Expansion**: Leverages the Gemini model to expand concise image generation prompts into more detailed descriptions.
-5.  **AI Smart Editing**: Allows users to upload an image, draw a mask over a specific area, and provide a text prompt to modify only that area. This feature uses the `Konva.js` library for its interactive canvas and sends the image, mask, and prompt to a dedicated backend endpoint for processing.
+5.  **AI Smart Editing**: Allows users to upload an image, draw a mask, and provide a text prompt to modify a specific area. This feature also leverages the unified `gemini-2.5-flash-image-preview` model via the central Cloudflare Worker proxy.
 
 ## Development Commands
 

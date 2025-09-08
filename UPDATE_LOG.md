@@ -42,3 +42,27 @@
 -   **工作流程**:
     1.  用户在 `index.html` 上传图片。
     2.  `editor.js` 捕获事件，调用 `canvas.js` 中的
+
+---
+
+# 版本 1.1.0: API 迁移与 Bug 修复
+
+**日期:** 2025-09-07
+
+本次更新主要集中在后端 API 架构的现代化升级以及对 AI 智能编辑功能的多个关键 Bug 修复，显著提升了应用的稳定性和用户体验。
+
+## 1. 核心架构升级：API 中转与模型统一
+
+-   **弃用 OpenRouter**: 已完全移除对 OpenRouter 的依赖。之前通过 `functions/api/openrouter.js` 代理的调用逻辑已被废弃。
+-   **引入自托管代理 (Cloudflare Worker)**: 所有对 Google Gemini API 的请求现在都通过一个统一的、自托管的 Cloudflare Worker 进行中转。这为 API 密钥管理和未来扩展提供了更稳定、更安全、更可控的解决方案。
+-   **模型统一**: 应用中的所有 AI 图像相关功能（包括 OCR 文本识别和 AI 智能编辑）现在都统一使用 `gemini-2.5-flash-image-preview` 模型，简化了后端逻辑。
+
+## 2. Bug 修复
+
+-   **修复移动端滑动冲突**: 解决了在 AI 编辑器中，为防止页面滚动而设置的触摸锁定范围过大，导致画笔大小等滑块控件在手机上无法通过手指滑动调整的问题。现在，滑动锁定被精确地限制在画布区域内，改善了移动端操作体验。
+-   **修复图片导出黑边问题**: 从根源上解决了 AI 编辑器保存图片时会带有黑色背景/边框的问题。通过修正向 AI 发送数据 (`exportLayersAsDataURL`) 和最终保存 (`exportImageLayerAsDataURL`) 两个环节的导出逻辑，确保在所有步骤中都只处理和保存干净、无黑边的图片内容，同时完整保留了精确位置编辑功能。
+
+## 3. 其他变更
+
+-   **UI 默认模型**: 主页图片生成功能的模型选项，现在默认选中 `gemini-2.5-flash-image-preview`。
+-   **代码清理**: 已删除不再使用的后端代理文件 `functions/api/image-edit.js` 和 `functions/api/openrouter.js`。
